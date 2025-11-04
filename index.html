@@ -22,8 +22,21 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1600px;
             width: 100%;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            width: 350px;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
         }
 
         h1 {
@@ -41,6 +54,11 @@
             font-size: 1.1em;
         }
 
+        .header {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
         .video-container {
             background: white;
             border-radius: 15px;
@@ -52,9 +70,7 @@
         .video-wrapper {
             position: relative;
             width: 100%;
-            max-width: 640px;
-            margin: 0 auto;
-            border-radius: 10px;
+            border-radius: 15px;
             overflow: hidden;
             background: #000;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -69,14 +85,15 @@
         .text-overlay {
             background: rgba(0, 0, 0, 0.9);
             color: #4CAF50;
-            padding: 15px 20px;
-            font-size: 16px;
-            line-height: 1.4;
-            border-radius: 0 0 10px 10px;
-            min-height: 60px;
+            padding: 20px 25px;
+            font-size: 18px;
+            line-height: 1.5;
+            border-radius: 15px;
+            min-height: 80px;
             display: flex;
             align-items: center;
             transition: all 3s ease-out;
+            margin-top: 20px;
         }
 
         .text-overlay.fade {
@@ -113,117 +130,113 @@
             font-weight: bold;
         }
 
-        .prompt-editor {
+        .control-panel {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 15px;
+            padding: 25px;
             margin-bottom: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .prompt-editor h3 {
+        .control-panel h3 {
             color: #667eea;
             margin-bottom: 15px;
-            font-size: 18px;
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .prompt-editor label {
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-panel label {
             display: block;
             margin-bottom: 8px;
             color: #555;
             font-weight: 500;
+            font-size: 13px;
         }
 
-        .prompt-editor select,
-        .prompt-editor textarea {
+        .control-panel select,
+        .control-panel textarea,
+        .control-panel input {
             width: 100%;
-            padding: 12px;
+            padding: 10px 12px;
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             transition: border-color 0.3s ease;
         }
 
-        .prompt-editor select:focus,
-        .prompt-editor textarea:focus {
+        .control-panel select:focus,
+        .control-panel textarea:focus,
+        .control-panel input:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        .prompt-editor textarea {
+        .control-panel textarea {
             resize: vertical;
             min-height: 80px;
             line-height: 1.5;
         }
 
-        .prompt-editor .btn-update {
+        .control-panel .btn-update,
+        .control-panel .btn-action {
+            width: 100%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 10px 25px;
+            padding: 12px 20px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             font-size: 14px;
             transition: all 0.3s ease;
+            margin-bottom: 10px;
         }
 
-        .prompt-editor .btn-update:hover:not(:disabled) {
+        .control-panel .btn-update:hover:not(:disabled),
+        .control-panel .btn-action:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .prompt-editor .btn-update:disabled {
+        .control-panel .btn-update:disabled,
+        .control-panel .btn-action:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 25px;
-            flex-wrap: wrap;
+        .toggle-section {
+            cursor: pointer;
+            user-select: none;
         }
 
-        button {
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 500px;
         }
 
         .btn-start {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-start:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
         }
 
         .btn-stop {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-stop:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
         }
 
         .status {
@@ -287,57 +300,87 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="header">
         <h1>🎥 Live VLM WebUI</h1>
         <p class="subtitle">Real-time vision AI interaction - describe, detect, analyze anything</p>
+    </div>
 
-        <div class="prompt-editor">
-            <h3>🎯 VLM Prompt</h3>
-            <label for="promptPreset">Quick Presets:</label>
-            <select id="promptPreset">
-                <option value="">-- Select a preset --</option>
-                <option value="Describe what you see in this image in one sentence.">Scene Description (Default)</option>
-                <option value="List all objects you can see in this image, separated by commas.">Object Detection</option>
-                <option value="Describe the person's activity and what they are doing.">Activity Recognition</option>
-                <option value="Are there any safety hazards visible? Answer with 'ALERT: description' or 'SAFE'.">Safety Monitoring</option>
-                <option value="Describe the facial expressions and emotions of people visible.">Emotion Detection</option>
-                <option value="Provide a detailed description of the scene for a visually impaired person.">Accessibility Description</option>
-                <option value="Read and transcribe any text visible in the image.">OCR / Text Reading</option>
-                <option value="What are the dominant colors in this image?">Color Analysis</option>
-                <option value="How many people are in this image? State locations.">People Counting</option>
-                <option value="Are there any pets or animals visible? If yes, describe them.">Pet/Animal Detection</option>
-            </select>
-
-            <label for="promptText">Custom Prompt:</label>
-            <textarea id="promptText" placeholder="Enter your custom prompt here...">Describe what you see in this image in one sentence.</textarea>
-
-            <button id="updatePromptBtn" class="btn-update">Update Prompt</button>
-        </div>
-
-        <div class="video-container">
-            <div class="video-wrapper">
-                <video id="videoElement" autoplay playsinline muted></video>
-                <div id="metrics" class="metrics" style="display: none;">
-                    <div><span class="label">Latency:</span> <span class="value" id="latencyValue">--</span> ms</div>
-                    <div><span class="label">Avg:</span> <span class="value" id="avgLatencyValue">--</span> ms</div>
-                    <div><span class="label">Count:</span> <span class="value" id="countValue">--</span></div>
+    <div class="container">
+        <!-- Left Sidebar: Controls -->
+        <div class="sidebar">
+            <!-- Connection Controls -->
+            <div class="control-panel">
+                <h3>⚡ Connection</h3>
+                <button id="startBtn" class="btn-action btn-start">Start VLM Analysis</button>
+                <button id="stopBtn" class="btn-action btn-stop" disabled>Stop Analysis</button>
+                <div id="status" class="status disconnected">
+                    Click "Start" to begin
                 </div>
             </div>
 
-            <div id="textOverlay" class="text-overlay">
-                <span id="vlmText">Waiting for connection...</span>
+            <!-- Model Selection -->
+            <div class="control-panel">
+                <h3>🤖 Model Selection</h3>
+                <div class="control-section">
+                    <label for="modelSelect">Available Models:</label>
+                    <select id="modelSelect">
+                        <option value="">Loading models...</option>
+                    </select>
+                    <button id="refreshModelsBtn" class="btn-action">Refresh Models</button>
+                </div>
             </div>
 
-            <div class="controls">
-                <button id="startBtn" class="btn-start">Start VLM Analysis</button>
-                <button id="stopBtn" class="btn-stop" disabled>Stop</button>
-            </div>
-
-            <div id="status" class="status disconnected">
-                Click "Start VLM Analysis" to begin
+            <!-- Prompt Editor -->
+            <div class="control-panel">
+                <h3 class="toggle-section" onclick="toggleSection('promptSection')">
+                    🎯 Prompt Editor <span id="promptToggle">▼</span>
+                </h3>
+                <div id="promptSection" class="collapsible-content expanded">
+                    <div class="control-section">
+                        <label for="promptPreset">Quick Presets:</label>
+                        <select id="promptPreset">
+                            <option value="">-- Select a preset --</option>
+                            <option value="Describe what you see in this image in one sentence.">Scene Description</option>
+                            <option value="List all objects you can see in this image, separated by commas.">Object Detection</option>
+                            <option value="Describe the person's activity and what they are doing.">Activity Recognition</option>
+                            <option value="Are there any safety hazards visible? Answer with 'ALERT: description' or 'SAFE'.">Safety Monitoring</option>
+                            <option value="Describe the facial expressions and emotions of people visible.">Emotion Detection</option>
+                            <option value="Provide a detailed description of the scene for a visually impaired person.">Accessibility</option>
+                            <option value="Read and transcribe any text visible in the image.">OCR / Text Reading</option>
+                            <option value="What are the dominant colors in this image?">Color Analysis</option>
+                            <option value="How many people are in this image? State locations.">People Counting</option>
+                            <option value="Are there any pets or animals visible? If yes, describe them.">Pet/Animal Detection</option>
+                        </select>
+                    </div>
+                    <div class="control-section">
+                        <label for="promptText">Custom Prompt:</label>
+                        <textarea id="promptText" placeholder="Enter your custom prompt here...">Describe what you see in this image in one sentence.</textarea>
+                        <button id="updatePromptBtn" class="btn-update">Update Prompt</button>
+                    </div>
+                </div>
             </div>
         </div>
 
+        <!-- Right Main Content: Video Display -->
+        <div class="main-content">
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <video id="videoElement" autoplay playsinline muted></video>
+                    <div id="metrics" class="metrics" style="display: none;">
+                        <div><span class="label">Latency:</span> <span class="value" id="latencyValue">--</span> ms</div>
+                        <div><span class="label">Avg:</span> <span class="value" id="avgLatencyValue">--</span> ms</div>
+                        <div><span class="label">Count:</span> <span class="value" id="countValue">--</span></div>
+                    </div>
+                </div>
+                
+                <div id="textOverlay" class="text-overlay">
+                    <span id="vlmText">Waiting for connection...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="max-width: 1600px; margin: 20px auto;">
         <div class="info-box">
             <h3>How it works:</h3>
             <ul>
@@ -364,6 +407,8 @@
         const promptPreset = document.getElementById('promptPreset');
         const promptText = document.getElementById('promptText');
         const updatePromptBtn = document.getElementById('updatePromptBtn');
+        const modelSelect = document.getElementById('modelSelect');
+        const refreshModelsBtn = document.getElementById('refreshModelsBtn');
 
         let peerConnection = null;
         let localStream = null;
@@ -376,6 +421,68 @@
             statusElement.textContent = message;
             statusElement.className = `status ${state}`;
         }
+
+        // Toggle collapsible sections
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const toggle = document.getElementById(sectionId.replace('Section', 'Toggle'));
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                if (toggle) toggle.textContent = '▶';
+            } else {
+                section.classList.add('expanded');
+                if (toggle) toggle.textContent = '▼';
+            }
+        }
+
+        // Fetch available models from server
+        async function fetchModels() {
+            try {
+                modelSelect.innerHTML = '<option value="">Loading models...</option>';
+                const response = await fetch('/models');
+                const data = await response.json();
+                
+                if (data.models && data.models.length > 0) {
+                    modelSelect.innerHTML = '';
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.name || model.id;
+                        if (model.current) {
+                            option.selected = true;
+                        }
+                        modelSelect.appendChild(option);
+                    });
+                } else {
+                    modelSelect.innerHTML = '<option value="">No models available</option>';
+                }
+            } catch (error) {
+                console.error('Error fetching models:', error);
+                modelSelect.innerHTML = '<option value="">Error loading models</option>';
+            }
+        }
+
+        // Handle model change
+        modelSelect.addEventListener('change', async (e) => {
+            const newModel = e.target.value;
+            if (!newModel) return;
+
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.send(JSON.stringify({
+                    type: 'update_model',
+                    model: newModel
+                }));
+                updateStatus('Model updated!', 'connected');
+            } else {
+                alert('Please start the VLM analysis first');
+            }
+        });
+
+        // Refresh models button
+        refreshModelsBtn.addEventListener('click', fetchModels);
+
+        // Load models on page load
+        window.addEventListener('load', fetchModels);
 
         // Handle preset selection
         promptPreset.addEventListener('change', (e) => {

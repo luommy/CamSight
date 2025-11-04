@@ -34,6 +34,45 @@ async def index(request):
     return web.Response(content_type="text/html", text=content)
 
 
+async def models(request):
+    """Return available models from the VLM API"""
+    try:
+        if vlm_service:
+            # Try to fetch models from the API
+            models_response = await vlm_service.client.models.list()
+            models_list = [
+                {
+                    "id": model.id,
+                    "name": model.id,
+                    "current": model.id == vlm_service.model
+                }
+                for model in models_response.data
+            ]
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps({"models": models_list})
+            )
+        else:
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps({"models": [], "error": "VLM service not initialized"})
+            )
+    except Exception as e:
+        logger.error(f"Error fetching models: {e}")
+        # Return current model as fallback
+        if vlm_service:
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps({
+                    "models": [{"id": vlm_service.model, "name": vlm_service.model, "current": True}]
+                })
+            )
+        return web.Response(
+            content_type="application/json",
+            text=json.dumps({"models": [], "error": str(e)})
+        )
+
+
 async def websocket_handler(request):
     """Handle WebSocket connections for text updates"""
     ws = web.WebSocketResponse()
@@ -67,6 +106,18 @@ async def websocket_handler(request):
                                 "type": "prompt_updated",
                                 "prompt": new_prompt
                             })
+                    
+                    elif data.get('type') == 'update_model':
+                        new_model = data.get('model', '').strip()
+                        if new_model and vlm_service:
+                            vlm_service.model = new_model
+                            logger.info(f"Model updated: {new_model}")
+
+                            # Confirm to client
+                            await ws.send_json({
+                                "type": "model_updated",
+                                "model": new_model
+                            })
                 except json.JSONDecodeError:
                     logger.error("Invalid JSON from client")
                 except Exception as e:
@@ -84,13 +135,13 @@ def broadcast_text_update(text: str, metrics: dict):
     """Broadcast text update and metrics to all connected WebSocket clients"""
     if not websockets:
         return
-    
+
     message = json.dumps({
         "type": "vlm_response",
         "text": text,
         "metrics": metrics
     })
-    
+
     # Send to all connected clients
     dead_websockets = set()
     for ws in websockets:
@@ -100,7 +151,7 @@ def broadcast_text_update(text: str, metrics: dict):
         except Exception as e:
             logger.error(f"Error sending to websocket: {e}")
             dead_websockets.add(ws)
-    
+
     # Clean up dead connections
     websockets.difference_update(dead_websockets)
 
@@ -162,17 +213,17 @@ async def offer(request):
 async def on_shutdown(app):
     """Cleanup on server shutdown"""
     logger.info("Shutting down server...")
-    
+
     # Close all websockets
     for ws in list(websockets):
         await ws.close()
     websockets.clear()
-    
+
     # Close all peer connections
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
     pcs.clear()
-    
+
     logger.info("Cleanup complete")
 
 
@@ -225,6 +276,7 @@ def main():
     # Create web application
     app = web.Application()
     app.router.add_get("/", index)
+    app.router.add_get("/models", models)
     app.router.add_get("/ws", websocket_handler)
     app.router.add_post("/offer", offer)
     app.on_shutdown.append(on_shutdown)
