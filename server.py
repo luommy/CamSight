@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import signal
+import aiohttp
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription, MediaStreamTrack
 from aiortc.contrib.media import MediaRelay
@@ -40,8 +41,32 @@ async def index(request):
 async def models(request):
     """Return available models from the VLM API"""
     try:
-        if vlm_service:
-            # Try to fetch models from the API
+        # Check if custom API base and key are provided in query params
+        api_base = request.rel_url.query.get('api_base')
+        api_key = request.rel_url.query.get('api_key')
+
+        if api_base:
+            # Query models from the provided API endpoint
+            from openai import AsyncOpenAI
+            temp_client = AsyncOpenAI(
+                base_url=api_base,
+                api_key=api_key if api_key else "EMPTY"
+            )
+            models_response = await temp_client.models.list()
+            models_list = [
+                {
+                    "id": model.id,
+                    "name": model.id,
+                    "current": False
+                }
+                for model in models_response.data
+            ]
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps({"models": models_list})
+            )
+        elif vlm_service:
+            # Use the server's VLM service
             models_response = await vlm_service.client.models.list()
             models_list = [
                 {
@@ -74,6 +99,53 @@ async def models(request):
             content_type="application/json",
             text=json.dumps({"models": [], "error": str(e)})
         )
+
+
+async def detect_services(request):
+    """Detect available local VLM services"""
+    services = [
+        {"name": "Ollama", "url": "http://localhost:11434/v1", "port": 11434, "path": "/api/tags"},
+        {"name": "vLLM", "url": "http://localhost:8000/v1", "port": 8000, "path": "/v1/models"},
+        {"name": "SGLang", "url": "http://localhost:30000/v1", "port": 30000, "path": "/v1/models"},
+    ]
+
+    detected = []
+
+    async def check_service(service):
+        """Check if a service is running by probing its endpoint"""
+        try:
+            timeout = aiohttp.ClientTimeout(total=1.0)  # 1 second timeout
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                url = f"http://localhost:{service['port']}{service['path']}"
+                async with session.get(url) as response:
+                    if response.status in [200, 404]:  # 404 is ok, means server is running
+                        logger.info(f"Detected {service['name']} at {service['url']}")
+                        return service
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            pass
+        return None
+
+    # Check all services concurrently
+    results = await asyncio.gather(*[check_service(s) for s in services])
+    detected = [s for s in results if s is not None]
+
+    # Default to NVIDIA API Catalog if no local services found
+    if not detected:
+        detected.append({
+            "name": "NVIDIA API Catalog",
+            "url": "https://integrate.api.nvidia.com/v1",
+            "port": None,
+            "path": None,
+            "requires_key": True
+        })
+
+    return web.Response(
+        content_type="application/json",
+        text=json.dumps({
+            "detected": detected,
+            "default": detected[0] if detected else None
+        })
+    )
 
 
 async def websocket_handler(request):
@@ -114,8 +186,16 @@ async def websocket_handler(request):
 
                     elif data.get('type') == 'update_model':
                         new_model = data.get('model', '').strip()
+                        api_base = data.get('api_base', '').strip()
+                        api_key = data.get('api_key', '').strip()
+
                         if new_model and vlm_service:
                             vlm_service.model = new_model
+
+                            # Update API settings if provided
+                            if api_base or api_key is not None:
+                                vlm_service.update_api_settings(api_base, api_key)
+
                             logger.info(f"Model updated: {new_model}")
 
                             # Confirm to client
@@ -388,6 +468,7 @@ def main():
     app = web.Application()
     app.router.add_get("/", index)
     app.router.add_get("/models", models)
+    app.router.add_get("/detect-services", detect_services)
     app.router.add_get("/ws", websocket_handler)
     app.router.add_post("/offer", offer)
     app.on_startup.append(on_startup)

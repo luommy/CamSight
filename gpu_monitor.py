@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 def get_cpu_model() -> str:
     """
     Get CPU model name in a cross-platform way
-    
+
     Returns:
         CPU model string, or 'Unknown CPU' if not available
     """
     try:
         # Try different methods based on platform
         system = platform.system()
-        
+
         if system == "Linux":
             # Read from /proc/cpuinfo
             try:
@@ -35,7 +35,7 @@ def get_cpu_model() -> str:
                             return line.split(":")[1].strip()
             except:
                 pass
-        
+
         elif system == "Darwin":  # macOS
             # Use sysctl to get CPU brand string
             try:
@@ -49,7 +49,7 @@ def get_cpu_model() -> str:
                     return result.stdout.strip()
             except:
                 pass
-        
+
         elif system == "Windows":
             # Use WMIC
             try:
@@ -65,14 +65,14 @@ def get_cpu_model() -> str:
                         return lines[1].strip()
             except:
                 pass
-        
+
         # Fallback to platform.processor()
         proc = platform.processor()
         if proc and proc.strip():
             return proc.strip()
-        
+
         return "Unknown CPU"
-        
+
     except Exception as e:
         logger.warning(f"Failed to get CPU model: {e}")
         return "Unknown CPU"
@@ -111,7 +111,7 @@ class GPUMonitor(ABC):
             memory = psutil.virtual_memory()
             hostname = socket.gethostname()
             cpu_model = get_cpu_model()
-            
+
             return {
                 "cpu_percent": cpu_percent,
                 "cpu_model": cpu_model,

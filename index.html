@@ -140,7 +140,7 @@
             border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 16px;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .panel-header {
@@ -186,6 +186,7 @@
             max-height: 1000px;
             transition: max-height 0.3s ease, opacity 0.3s ease;
             opacity: 1;
+            overflow: visible;
         }
 
         .panel-content.collapsed {
@@ -193,6 +194,26 @@
             opacity: 0;
             padding: 0 16px;
             overflow: hidden;
+        }
+
+        #apiKeyField {
+            max-height: 100px;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 1;
+            overflow: hidden;
+        }
+
+        #apiKeyField.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        #apiKeyToggle {
+            transition: transform 0.2s;
+        }
+
+        #apiKeyToggle.collapsed {
+            transform: rotate(-90deg);
         }
 
         .form-group {
@@ -209,8 +230,7 @@
             font-weight: 500;
             color: var(--text-secondary);
             margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         input[type="text"],
@@ -250,8 +270,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .btn-primary {
@@ -428,6 +447,27 @@
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
+            transition: opacity 0.3s ease, filter 0.3s ease;
+        }
+
+        .result-card.cloud-api {
+            opacity: 0.5;
+            filter: grayscale(0.3);
+        }
+
+        .api-preset-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .api-preset-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .api-preset-item strong {
+            color: var(--text-primary);
+            font-size: 13px;
         }
 
         .result-header {
@@ -445,8 +485,7 @@
             font-size: 14px;
             font-weight: 600;
             color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             margin-bottom: 6px;
         }
 
@@ -524,8 +563,7 @@
             font-size: 11px;
             font-weight: 600;
             color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .stat-value {
@@ -638,14 +676,49 @@
                 </div>
                 <div class="panel-content" id="vlmConfig">
                     <div class="form-group">
-                        <label>API Base URL</label>
+                        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                            <label style="margin-bottom: 0; flex: 1;">API Base URL</label>
+                            <div style="position: relative;">
+                                <button class="icon-btn" id="apiPresetsBtn" title="Select preset API endpoint" style="font-size: 14px;">📋</button>
+                                <div id="apiPresetsMenu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 280px; z-index: 9999;">
+                                    <div style="padding: 8px 0;">
+                                        <div class="api-preset-item" data-url="http://localhost:11434/v1">
+                                            <strong>Ollama</strong><br>
+                                            <span style="font-size: 11px; color: var(--text-muted);">http://localhost:11434/v1</span>
+                                        </div>
+                                        <div class="api-preset-item" data-url="http://localhost:8000/v1">
+                                            <strong>vLLM</strong><br>
+                                            <span style="font-size: 11px; color: var(--text-muted);">http://localhost:8000/v1</span>
+                                        </div>
+                                        <div class="api-preset-item" data-url="http://localhost:30000/v1">
+                                            <strong>SGLang</strong><br>
+                                            <span style="font-size: 11px; color: var(--text-muted);">http://localhost:30000/v1</span>
+                                        </div>
+                                        <div style="border-top: 1px solid var(--border-color); margin: 4px 0;"></div>
+                                        <div class="api-preset-item" data-url="https://api.openai.com/v1">
+                                            <strong>OpenAI</strong><br>
+                                            <span style="font-size: 11px; color: var(--text-muted);">https://api.openai.com/v1</span>
+                                        </div>
+                                        <div class="api-preset-item" data-url="https://integrate.api.nvidia.com/v1">
+                                            <strong>NVIDIA API Catalog</strong><br>
+                                            <span style="font-size: 11px; color: var(--text-muted);">https://integrate.api.nvidia.com/v1</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <input type="text" id="apiBaseUrl" value="http://localhost:11434/v1" placeholder="http://localhost:8000/v1">
-                        <div class="input-hint">vLLM: :8000/v1 | SGLang: :30000/v1 | Ollama: :11434/v1</div>
+                        <div class="input-hint" id="apiBaseHint">Select from presets or enter custom URL</div>
                     </div>
-                    <div class="form-group">
-                        <label>API Key (Optional)</label>
-                        <input type="text" id="apiKey" placeholder="sk-..." autocomplete="off">
-                        <div class="input-hint">Required for OpenAI, Anthropic, etc.</div>
+                    <div class="form-group" id="apiKeyGroup">
+                        <div style="display: flex; align-items: center; cursor: pointer; margin-bottom: 8px;" onclick="toggleApiKeyField()">
+                            <label style="margin-bottom: 0; flex: 1;">API Key (Optional)</label>
+                            <span id="apiKeyToggle" style="font-size: 12px; color: var(--text-secondary);">▼</span>
+                        </div>
+                        <div id="apiKeyField">
+                            <input type="text" id="apiKey" placeholder="sk-..." autocomplete="off">
+                            <div class="input-hint">Required for OpenAI and NVIDIA API Catalog, etc.</div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -681,7 +754,7 @@
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <button class="btn btn-primary" id="startBtn" style="width: 100%; margin-bottom: 8px;">
-                            ▶️ Open Camera and Start VLM Analysis
+                            ▶️ Open Camera and<br>Start VLM Analysis
                         </button>
                         <button class="btn btn-secondary" id="stopBtn" disabled style="width: 100%;">
                             ⏹️ Stop
@@ -766,7 +839,7 @@
             <div class="result-card">
                 <div class="result-header">
                     <div class="result-header-left">
-                        <div class="result-title">🤖 VLM OUTPUT</div>
+                        <div class="result-title">🤖 VLM Output</div>
                         <div class="result-subtitle">
                             Model: <span id="modelName">--</span>
                         </div>
@@ -794,10 +867,10 @@
             </div>
 
             <!-- System Stats -->
-            <div class="result-card">
+            <div class="result-card" id="systemStatsCard">
                 <div class="result-header">
                     <div class="result-title">
-                        📊 System Stats
+                        📊 Local System Stats
                         <span style="font-weight: 400; font-size: 11px; color: var(--text-muted); text-transform: none;">
                             (<span id="systemInfoHeader">Loading...</span>)
                         </span>
@@ -896,22 +969,22 @@
                 // Now enumerate with labels
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                
+
                 const cameraSelect = document.getElementById('cameraSelect');
                 cameraSelect.innerHTML = '';
-                
+
                 if (videoDevices.length === 0) {
                     cameraSelect.innerHTML = '<option value="">No cameras found</option>';
                     return;
                 }
-                
+
                 videoDevices.forEach((device, index) => {
                     const option = document.createElement('option');
                     option.value = device.deviceId;
                     option.text = device.label || `Camera ${index + 1}`;
                     cameraSelect.appendChild(option);
                 });
-                
+
                 // Select first camera by default
                 selectedCameraId = videoDevices[0].deviceId;
                 console.log(`Found ${videoDevices.length} camera(s)`);
@@ -925,13 +998,13 @@
         document.getElementById('cameraSelect').addEventListener('change', async (e) => {
             selectedCameraId = e.target.value;
             console.log('Selected camera:', selectedCameraId);
-            
+
             // If already running, switch camera
             if (isAnalysisRunning && localStream) {
                 try {
                     // Stop current stream
                     localStream.getTracks().forEach(track => track.stop());
-                    
+
                     // Get new stream with selected camera
                 localStream = await navigator.mediaDevices.getUserMedia({
                     video: {
@@ -940,10 +1013,10 @@
                         height: { ideal: 720 }
                         }
                     });
-                    
+
                     // Update video element
                     videoElement.srcObject = localStream;
-                    
+
                     // Replace track in peer connection
                     const videoTrack = localStream.getVideoTracks()[0];
                     const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
@@ -985,17 +1058,95 @@
             toggle.classList.toggle('collapsed');
         }
 
+        // API Key Field Toggle
+        function toggleApiKeyField() {
+            const field = document.getElementById('apiKeyField');
+            const toggle = document.getElementById('apiKeyToggle');
+            field.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+
+        // Check if API Base URL requires API key
+        function checkApiKeyRequirement(url) {
+            const apiKeyField = document.getElementById('apiKeyField');
+            const apiKeyToggle = document.getElementById('apiKeyToggle');
+
+            // Check if URL is a remote service (not localhost or 127.0.0.1)
+            const isLocal = url.includes('localhost') || url.includes('127.0.0.1') || url.includes('0.0.0.0');
+            const isRemote = !isLocal;
+
+            if (isRemote) {
+                // Show API key field for remote services
+                apiKeyField.classList.remove('collapsed');
+                apiKeyToggle.classList.remove('collapsed');
+                console.log('Remote API detected - API Key field expanded');
+            } else {
+                // Hide API key field for local services
+                apiKeyField.classList.add('collapsed');
+                apiKeyToggle.classList.add('collapsed');
+                console.log('Local API detected - API Key field collapsed');
+            }
+        }
+
         // Status Update
         function updateStatus(message, state) {
             connectionStatus.textContent = message;
             connectionStatus.className = `status-badge ${state}`;
         }
 
+        // Detect Local VLM Services
+        async function detectServices() {
+            try {
+                const response = await fetch('/detect-services');
+                const data = await response.json();
+
+                if (data.default) {
+                    const service = data.default;
+                    console.log('Detected service:', service.name);
+
+                    // Update API Base URL
+                    apiBaseUrl.value = service.url;
+
+                    // Check if API key is required
+                    checkApiKeyRequirement(service.url);
+                    updateSystemStatsVisibility(service.url);
+
+                    // Update hint text
+                    const hintDiv = apiBaseUrl.nextElementSibling;
+                    if (data.detected.length > 1) {
+                        const serviceNames = data.detected.map(s => s.name).join(', ');
+                        hintDiv.textContent = `Detected: ${serviceNames}`;
+                    } else if (service.name === 'NVIDIA API Catalog') {
+                        hintDiv.textContent = 'No local VLM services found. Using NVIDIA API Catalog (requires API key from build.nvidia.com)';
+                    }
+                }
+            } catch (error) {
+                console.error('Error detecting services:', error);
+                // Default to showing API key field on error
+                checkApiKeyRequirement('https://');
+            }
+        }
+
         // Fetch Models
         async function fetchModels() {
             try {
                 modelSelect.innerHTML = '<option value="">Loading models...</option>';
-                const response = await fetch('/models');
+
+                // Get current API settings from UI
+                const currentApiBase = apiBaseUrl.value.trim();
+                const currentApiKey = apiKey.value.trim();
+
+                // Build query params
+                const params = new URLSearchParams();
+                if (currentApiBase) {
+                    params.append('api_base', currentApiBase);
+                }
+                if (currentApiKey) {
+                    params.append('api_key', currentApiKey);
+                }
+
+                const url = `/models${params.toString() ? '?' + params.toString() : ''}`;
+                const response = await fetch(url);
                 const data = await response.json();
 
                 if (data.models && data.models.length > 0) {
@@ -1034,9 +1185,12 @@
             document.getElementById('modelName').textContent = newModel;
 
             if (websocket && websocket.readyState === WebSocket.OPEN) {
+                // Send model, API base, and API key together
                 websocket.send(JSON.stringify({
                     type: 'update_model',
-                    model: newModel
+                    model: newModel,
+                    api_base: apiBaseUrl.value.trim(),
+                    api_key: apiKey.value.trim()
                 }));
                 updateStatus('Model configured', 'connected');
             }
@@ -1080,6 +1234,63 @@
         });
 
         refreshModelsBtn.addEventListener('click', fetchModels);
+
+        // Watch for API Base URL changes
+        apiBaseUrl.addEventListener('blur', (e) => {
+            checkApiKeyRequirement(e.target.value);
+            updateSystemStatsVisibility(e.target.value);
+        });
+
+        apiBaseUrl.addEventListener('change', (e) => {
+            checkApiKeyRequirement(e.target.value);
+            updateSystemStatsVisibility(e.target.value);
+        });
+
+        // API Presets Menu
+        const apiPresetsBtn = document.getElementById('apiPresetsBtn');
+        const apiPresetsMenu = document.getElementById('apiPresetsMenu');
+
+        apiPresetsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            apiPresetsMenu.style.display = apiPresetsMenu.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!apiPresetsMenu.contains(e.target) && e.target !== apiPresetsBtn) {
+                apiPresetsMenu.style.display = 'none';
+            }
+        });
+
+        // Handle preset selection
+        document.querySelectorAll('.api-preset-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const url = e.currentTarget.getAttribute('data-url');
+                apiBaseUrl.value = url;
+                apiPresetsMenu.style.display = 'none';
+
+                // Trigger checks
+                checkApiKeyRequirement(url);
+                updateSystemStatsVisibility(url);
+
+                // Update hint
+                const hint = document.getElementById('apiBaseHint');
+                const serviceName = e.currentTarget.querySelector('strong').textContent;
+                hint.textContent = `Using ${serviceName}`;
+            });
+        });
+
+        // Update system stats visibility based on API endpoint
+        function updateSystemStatsVisibility(url) {
+            const systemStatsCard = document.getElementById('systemStatsCard');
+            const isLocal = url.includes('localhost') || url.includes('127.0.0.1') || url.includes('0.0.0.0');
+
+            if (isLocal) {
+                systemStatsCard.classList.remove('cloud-api');
+            } else {
+                systemStatsCard.classList.add('cloud-api');
+            }
+        }
 
         // Mirror video toggle
         mirrorBtn.addEventListener('click', () => {
@@ -1152,37 +1363,37 @@
             const gpuName = stats.gpu_name || 'Unknown GPU';
             document.getElementById('systemInfoHeader').textContent = `${hostname} (${cpuModel}) with ${gpuName}`;
 
-            // GPU
+            // GPU (Green)
             const gpuPercent = stats.gpu_percent || 0;
             document.getElementById('gpuUtil').textContent = `${gpuPercent.toFixed(1)}%`;
             const gpuBar = document.getElementById('gpuUtilBar');
             gpuBar.style.width = `${gpuPercent}%`;
-            gpuBar.className = gpuPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+            gpuBar.style.background = '#4CAF50';  // Green
 
-            // VRAM
+            // VRAM (Purple)
             const vramUsed = stats.vram_used_gb || 0;
             const vramTotal = stats.vram_total_gb || 0;
             const vramPercent = stats.vram_percent || 0;
             document.getElementById('vramUsage').textContent = `${vramUsed.toFixed(1)}/${vramTotal.toFixed(1)} GB`;
             const vramBar = document.getElementById('vramBar');
             vramBar.style.width = `${vramPercent}%`;
-            vramBar.className = vramPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+            vramBar.style.background = '#9C27B0';  // Purple
 
-            // CPU
+            // CPU (Blue)
             const cpuPercent = stats.cpu_percent || 0;
             document.getElementById('cpuUtil').textContent = `${cpuPercent.toFixed(1)}%`;
             const cpuBar = document.getElementById('cpuBar');
             cpuBar.style.width = `${cpuPercent}%`;
-            cpuBar.className = cpuPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+            cpuBar.style.background = '#2196F3';  // Blue
 
-            // RAM
+            // RAM (Orange)
             const ramUsed = stats.ram_used_gb || 0;
             const ramTotal = stats.ram_total_gb || 0;
             const ramPercent = stats.ram_percent || 0;
             document.getElementById('ramUsage').textContent = `${ramUsed.toFixed(1)}/${ramTotal.toFixed(1)} GB`;
             const ramBar = document.getElementById('ramBar');
             ramBar.style.width = `${ramPercent}%`;
-            ramBar.className = ramPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+            ramBar.style.background = '#FF9800';  // Orange
 
             // Sparklines
             if (stats.history) {
@@ -1198,10 +1409,10 @@
                     canvas.height = canvas.offsetHeight;
                 });
 
-                drawSparkline(canvases.gpu, stats.history.gpu_util, '#4CAF50');
-                drawSparkline(canvases.vram, stats.history.vram_used, '#2196F3');
-                drawSparkline(canvases.cpu, stats.history.cpu_util, '#FF9800');
-                drawSparkline(canvases.ram, stats.history.ram_used, '#9C27B0');
+                drawSparkline(canvases.gpu, stats.history.gpu_util, '#4CAF50');  // Green
+                drawSparkline(canvases.vram, stats.history.vram_used, '#9C27B0'); // Purple
+                drawSparkline(canvases.cpu, stats.history.cpu_util, '#2196F3');   // Blue
+                drawSparkline(canvases.ram, stats.history.ram_used, '#FF9800');   // Orange
             }
         }
 
@@ -1279,7 +1490,7 @@
                     width: { ideal: 1280 },
                     height: { ideal: 720 }
                 };
-                
+
                 if (selectedCameraId) {
                     videoConstraints.deviceId = { exact: selectedCameraId };
                 }
@@ -1384,7 +1595,9 @@
         stopBtn.addEventListener('click', stop);
 
         // Load on page load
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
+            // Detect services first, then fetch models
+            await detectServices();
             fetchModels();
             connectWebSocket();
 

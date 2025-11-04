@@ -182,3 +182,25 @@ class VLMService:
             logger.info(f"Updated prompt to: {new_prompt}, max_tokens: {max_tokens}")
         else:
             logger.info(f"Updated prompt to: {new_prompt}")
+
+    def update_api_settings(self, api_base: Optional[str] = None, api_key: Optional[str] = None) -> None:
+        """
+        Update API base URL and/or API key, recreating the client
+
+        Args:
+            api_base: New API base URL (optional)
+            api_key: New API key (optional, use empty string for local services)
+        """
+        if api_base:
+            self.api_base = api_base
+        if api_key is not None:  # Allow empty string
+            self.api_key = api_key if api_key else "EMPTY"
+
+        # Recreate the client with new settings
+        self.client = AsyncOpenAI(
+            base_url=self.api_base,
+            api_key=self.api_key
+        )
+
+        masked_key = "***" + self.api_key[-4:] if self.api_key and len(self.api_key) > 4 and self.api_key != "EMPTY" else "EMPTY"
+        logger.info(f"Updated API settings - base: {self.api_base}, key: {masked_key}")
