@@ -1,15 +1,35 @@
 # Live VLM WebUI
 
-Real-time vision AI interaction through your webcam. Stream video to a Vision Language Model (VLM) and get live responses overlaid on your video feed. Use it for scene description, object detection, activity monitoring, accessibility features, or any custom vision task.
+**A universal web interface for real-time Vision Language Model interaction and benchmarking.**
+
+Stream your webcam to any VLM and get live AI-powered analysis - perfect for testing models, benchmarking performance, and exploring vision AI capabilities across different hardware platforms.
+
+## Key Highlights
+
+🌐 **Universal Compatibility** - Works with **any VLM served via OpenAI-compatible API** using base64-encoded images. Deploy on:
+- 🟢 **NVIDIA Jetson** (Orin, AGX Xavier)
+- 🔵 **NVIDIA DGX** systems
+- 🖥️ **Desktop/Workstation** (Linux, potentially Mac)
+- ☁️ **Cloud APIs** (OpenAI, Anthropic, etc.)
 
 ## Features
 
-- 🎥 **Real-time WebRTC video streaming** - Bidirectional, low-latency communication
-- 🤖 **Flexible VLM integration** - Works with any OpenAI-compatible API
-- 📝 **Custom prompts** - Not just captioning - describe, detect, analyze, monitor anything
-- ⚡ **Asynchronous processing** - Non-blocking inference keeps video smooth
-- 🎨 **Modern web UI** - Clean, responsive interface
-- 🔌 **Loosely coupled** - Compatible with vLLM, SGLang, Ollama, and more
+- 🎥 **Real-time WebRTC streaming** - Low-latency bidirectional video
+- 🔌 **OpenAI-compatible API** - Works with vLLM, SGLang, Ollama, TGI, or any vision API endpoint that uses base64-encoded images
+- 📝 **Custom prompts** - Scene description, object detection, monitoring, alert and more
+- ⚡ **Async processing** - Smooth video while VLM processes frames
+- 🎨 **Modern web UI** - Clean, responsive interface with HTTPS support
+- 🔧 **Flexible deployment** - Local inference or cloud APIs
+
+## Future Enhancements (Roadmap)
+
+- [ ] Interactive prompt editor with dropdown presets
+- [ ] Model selection dropdown (auto-detect available models from API)
+- [ ] Separate video and text overlay (independent HTML elements)
+- [ ] Live GPU utilization stats (memory, load)
+- [ ] Inference latency metrics (ms per frame)
+- [ ] Multi-platform GPU monitoring (NVIDIA, Apple Silicon, AMD)
+- [ ] Benchmark mode for performance comparison across hardware
 
 ## Screenshot
 
@@ -31,7 +51,7 @@ The VLM processes frames asynchronously. While processing, the video stream cont
   - [SGLang](https://github.com/sgl-project/sglang) (good for complex reasoning)
   - [Ollama](https://ollama.ai/) (easiest to get started)
   - Any OpenAI-compatible API
-- Webcam
+- Webcam (V4L2 compliant video source)
 
 ## Installation
 
@@ -125,7 +145,7 @@ Then click on "**Proceeed to <IP_ADDRESS> (unsafe)**".
 
 5. **Click "Start VLM Analysis"** and allow camera access
 
-![](https://github.com/user-attachments/assets/9b0ec5c2-dc03-4553-b9e0-bd71a85ab399)
+![](https://github.com/user-attachments/assets/c2a8c58b-9271-479e-88a1-8369dbcc3178)
 
 ### Manual Usage
 
