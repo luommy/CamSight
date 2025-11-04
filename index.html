@@ -662,14 +662,32 @@
                 </div>
             </div>
 
-            <!-- Analysis Control Buttons -->
-            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
-                <button class="btn btn-primary" id="startBtn" style="flex: 1; padding: 12px;">
-                    ▶️ Start Analysis
-                </button>
-                <button class="btn btn-secondary" id="stopBtn" disabled style="flex: 1; padding: 12px;">
-                    ⏹️ Stop
-                </button>
+            <!-- Camera and App Control -->
+            <div class="panel">
+                <div class="panel-header" onclick="togglePanel('cameraConfig')">
+                    <div class="panel-title">
+                        <span class="panel-icon">📹</span>
+                        Camera and App Control
+                    </div>
+                    <span class="panel-toggle" id="cameraConfigToggle">▼</span>
+                </div>
+                <div class="panel-content" id="cameraConfig">
+                    <div class="form-group">
+                        <label>Camera Selection</label>
+                        <select id="cameraSelect">
+                            <option value="">Detecting cameras...</option>
+                        </select>
+                        <div class="input-hint">Select camera device to use for VLM analysis</div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <button class="btn btn-primary" id="startBtn" style="width: 100%; margin-bottom: 8px;">
+                            ▶️ Open Camera and Start VLM Analysis
+                        </button>
+                        <button class="btn btn-secondary" id="stopBtn" disabled style="width: 100%;">
+                            ⏹️ Stop
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Prompt Editor -->
@@ -769,7 +787,7 @@
                             <span class="metric-value" id="countValue">--</span>
                         </div>
                     </div>
-                </div>
+            </div>
 
                 <div class="result-prompt" id="currentPrompt">Waiting to start...</div>
                 <div class="result-text" id="resultText">Click "Start VLM Analysis" to begin</div>
@@ -783,8 +801,8 @@
                         <span style="font-weight: 400; font-size: 11px; color: var(--text-muted); text-transform: none;">
                             (<span id="systemInfoHeader">Loading...</span>)
                         </span>
-                    </div>
-                </div>
+            </div>
+        </div>
 
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -866,6 +884,82 @@
         let fadeTimeout = null;
         let lastText = '';
         let isAnalysisRunning = false;
+        let selectedCameraId = null;
+
+        // Enumerate and list available cameras
+        async function enumerateCameras() {
+            try {
+                // Request permission first to get device labels
+                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                tempStream.getTracks().forEach(track => track.stop());
+
+                // Now enumerate with labels
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                const cameraSelect = document.getElementById('cameraSelect');
+                cameraSelect.innerHTML = '';
+                
+                if (videoDevices.length === 0) {
+                    cameraSelect.innerHTML = '<option value="">No cameras found</option>';
+                    return;
+                }
+                
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+                
+                // Select first camera by default
+                selectedCameraId = videoDevices[0].deviceId;
+                console.log(`Found ${videoDevices.length} camera(s)`);
+            } catch (err) {
+                console.error('Error enumerating cameras:', err);
+                document.getElementById('cameraSelect').innerHTML = '<option value="">Error detecting cameras</option>';
+            }
+        }
+
+        // Handle camera selection change
+        document.getElementById('cameraSelect').addEventListener('change', async (e) => {
+            selectedCameraId = e.target.value;
+            console.log('Selected camera:', selectedCameraId);
+            
+            // If already running, switch camera
+            if (isAnalysisRunning && localStream) {
+                try {
+                    // Stop current stream
+                    localStream.getTracks().forEach(track => track.stop());
+                    
+                    // Get new stream with selected camera
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                            deviceId: { exact: selectedCameraId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                        }
+                    });
+                    
+                    // Update video element
+                    videoElement.srcObject = localStream;
+                    
+                    // Replace track in peer connection
+                    const videoTrack = localStream.getVideoTracks()[0];
+                    const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                    if (sender) {
+                        await sender.replaceTrack(videoTrack);
+                        console.log('Camera switched successfully');
+                    }
+                } catch (err) {
+                    console.error('Error switching camera:', err);
+                    alert('Failed to switch camera: ' + err.message);
+                }
+            }
+        });
+
+        // Enumerate cameras on page load
+        enumerateCameras();
 
         // Theme Toggle
         themeToggle.addEventListener('click', () => {
@@ -1180,11 +1274,18 @@
 
                 updateStatus('Requesting camera...', 'processing');
 
+                // Use selected camera or default
+                const videoConstraints = {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                };
+                
+                if (selectedCameraId) {
+                    videoConstraints.deviceId = { exact: selectedCameraId };
+                }
+
                 localStream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
+                    video: videoConstraints,
                     audio: false
                 });
                 videoElement.srcObject = localStream;

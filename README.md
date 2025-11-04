@@ -22,15 +22,16 @@ Stream your webcam to any VLM and get live AI-powered analysis - perfect for tes
 - 🔧 **Flexible deployment** - Local inference or cloud APIs (OpenAI, Anthropic, etc.)
 
 ### UI & Visualization
-- 🎨 **Modern NVIDIA-themed UI** - Professional design inspired by NVIDIA NGC Catalog
-- 🌓 **Light/Dark theme toggle** - Automatic preference persistence
+- 🎨 **Modern NVIDIA-themed UI** - Professional design inspired by NVIDIA NGC Catalog with NVIDIA green accents
+- 🌓 **Light/Dark theme toggle** - Automatic preference persistence with localStorage
 - 📊 **Live system monitoring** - Real-time GPU, VRAM, CPU, and RAM stats with sparkline charts
-- ⏱️ **Inference metrics** - Live latency tracking (last, average, total count)
-- 🪞 **Video mirroring** - Toggle button for camera view
-- 📱 **Responsive layout** - Optimized for single-screen viewing (video + output + stats all visible)
+- ⏱️ **Inference metrics** - Live latency tracking (last, average, total count) displayed with VLM output
+- 🪞 **Video mirroring** - Toggle button overlay on camera view
+- 📱 **Compact layout** - Single-screen design with all content visible (video, output, stats, controls)
 
 ### Configuration & Control
 - 🎛️ **Dynamic settings** - Change model, prompt, and processing interval without restarting
+- 📹 **Multi-camera support** - Detect and switch between multiple cameras (USB webcams, built-in cameras)
 - 🔄 **Model auto-detection** - Refresh button to discover available models from API
 - ⚙️ **Adjustable processing rate** - Control frame interval (1-3600 frames, default 30)
 - 🎯 **Max tokens control** - Fine-tune output length (1-4096 tokens)
@@ -38,7 +39,10 @@ Stream your webcam to any VLM and get live AI-powered analysis - perfect for tes
 
 ### Platform Support
 - 💻 **Cross-platform monitoring** - Auto-detects NVIDIA GPUs (NVML), with framework for Apple Silicon and AMD
-- 🖥️ **System detection** - Displays actual CPU model and hostname (Linux, macOS, Windows)
+- 🖥️ **Dynamic system detection** - Automatically displays CPU model name and hostname
+  - Linux: reads from `/proc/cpuinfo`
+  - macOS: uses `sysctl machdep.cpu.brand_string`
+  - Windows: uses WMIC
 - 🔒 **HTTPS support** - Self-signed certificates for secure webcam access
 
 ## Future Enhancements (Roadmap)
@@ -173,22 +177,34 @@ Once the server is running, the web interface provides full control:
 
 **Left Sidebar Controls:**
 - **VLM API Configuration** - Change API URL, key, and model on-the-fly
-  - 🔄 **Refresh Models** button to auto-detect available models
-  - ➕ **Download Model** (coming soon)
-- **Start/Stop Analysis** - Control buttons right below API config
+  - **Model Selection** with compact icon buttons: 🔄 Refresh models | ➕ Download (coming soon)
+  - Auto-detects available models from your VLM API
+- **Camera and App Control** - Select camera and control application
+  - Dropdown menu lists all detected video input devices
+  - Switch cameras on-the-fly without restarting analysis
+  - **Start/Stop buttons** - Open camera and start VLM analysis | Stop
 - **Prompt Editor** - Choose from 10+ presets or write custom prompts
   - Adjust **Max Tokens** for response length (1-4096)
+  - Presets include: scene description, object detection, safety monitoring, OCR, emotion detection, etc.
 - **Processing Settings** - Set frame interval (1-3600 frames)
-  - Lower = more frequent analysis, higher GPU usage
-  - Higher = less frequent, good for benchmarking
+  - Lower (5-30) = more frequent analysis, higher GPU usage
+  - Higher (60-300) = less frequent, good for benchmarking and power saving
 
 **Main Content Area:**
-- **Video Feed** - Live webcam with mirror toggle button
-- **VLM Output** - Real-time results with inference metrics
-- **System Stats** - Live GPU, VRAM, CPU, RAM monitoring with sparkline graphs
+- **Video Feed** - Live webcam with mirror toggle button (🔄) overlay in corner
+- **VLM Output Card** - Real-time analysis results with:
+  - Model name and inference latency metrics (last, average, count)
+  - Current prompt display (shown in gray box with green accent)
+  - Generated text output with fade effect to indicate freshness
+- **System Stats Card** - Live monitoring with:
+  - System info header: `hostname (CPU model) with GPU name`
+  - GPU utilization and VRAM usage with progress bars
+  - CPU and RAM stats with progress bars
+  - Sparkline graphs showing historical trends (60-second window)
 
 **Header:**
-- **Connection Status** - Shows WebSocket connectivity
+- **Logo and Title** - 🎥 "Live VLM WebUI" with subtitle
+- **Connection Status** - Shows WebSocket connectivity (Connected/Disconnected)
 - **Theme Toggle** - Switch between Light/Dark modes (🌙/☀️)
 
 ### Manual Usage
@@ -329,9 +345,12 @@ python server.py --model llama-3.2-11b-vision-instruct \
 
 **Guidelines:**
 - **Lower values** (5-15 frames) = more frequent analysis, higher GPU usage (~2-6 FPS @ 30fps)
-- **Default** (30 frames) = balanced, ~1 FPS analysis
-- **Higher values** (60-300 frames) = less frequent, good for benchmarking (~0.1-0.5 FPS)
-- **Very high** (300-3600 frames) = infrequent updates, minimal GPU load (10s-2min intervals)
+- **Default** (30 frames) = balanced, ~1 FPS analysis @ 30fps video
+- **Higher values** (60-120 frames) = less frequent, good for monitoring (~0.25-0.5 FPS)
+- **Very high** (300-3600 frames) = infrequent updates for benchmarking or power saving
+  - 300 frames = ~10 second intervals @ 30fps
+  - 900 frames = ~30 second intervals @ 30fps
+  - 3600 frames = ~2 minute intervals @ 30fps
 
 ### Model Selection
 Choose based on your hardware and needs:
@@ -505,7 +524,7 @@ Extend `gpu_monitor.py` for new platforms:
 ```python
 class AppleSiliconMonitor(GPUMonitor):
     """Monitoring for Apple M1/M2/M3 chips"""
-    
+
     def get_stats(self) -> Dict:
         # Use powermetrics or ioreg to get GPU stats
         # Return standardized dict format
