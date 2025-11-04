@@ -348,8 +348,9 @@ class JetsonThorMonitor(GPUMonitor):
                 # Get memory stats (jtop uses shared memory on Jetson)
                 memory = self.jtop_instance.memory
                 # Thor uses unified memory, RAM is shared with GPU
-                vram_used_gb = memory.get('RAM', {}).get('used', 0) / 1024  # Convert MB to GB
-                vram_total_gb = memory.get('RAM', {}).get('tot', 0) / 1024
+                # jtop returns memory in KB, convert to GB (divide by 1024^2)
+                vram_used_gb = memory.get('RAM', {}).get('used', 0) / (1024 * 1024)
+                vram_total_gb = memory.get('RAM', {}).get('tot', 0) / (1024 * 1024)
                 vram_percent = (vram_used_gb / vram_total_gb * 100) if vram_total_gb > 0 else 0
 
                 # Temperature
