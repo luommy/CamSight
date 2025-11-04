@@ -13,6 +13,7 @@ from aiortc.contrib.media import MediaRelay
 
 from vlm_service import VLMService
 from video_processor import VideoProcessorTrack
+from gpu_monitor import create_monitor
 
 # Configure logging
 logging.basicConfig(
@@ -26,6 +27,8 @@ relay = MediaRelay()
 pcs = set()
 vlm_service = None
 websockets = set()  # Track active WebSocket connections
+gpu_monitor = None  # GPU monitoring instance
+gpu_monitor_task = None  # Background task for GPU monitoring
 
 
 async def index(request):
@@ -106,7 +109,7 @@ async def websocket_handler(request):
                                 "type": "prompt_updated",
                                 "prompt": new_prompt
                             })
-                    
+
                     elif data.get('type') == 'update_model':
                         new_model = data.get('model', '').strip()
                         if new_model and vlm_service:
@@ -154,6 +157,58 @@ def broadcast_text_update(text: str, metrics: dict):
 
     # Clean up dead connections
     websockets.difference_update(dead_websockets)
+
+
+def broadcast_gpu_stats(stats: dict):
+    """Broadcast GPU stats to all connected WebSocket clients"""
+    if not websockets:
+        return
+
+    message = json.dumps({
+        "type": "gpu_stats",
+        "stats": stats
+    })
+
+    # Send to all connected clients
+    dead_websockets = set()
+    for ws in websockets:
+        try:
+            asyncio.create_task(ws.send_str(message))
+        except Exception as e:
+            logger.error(f"Error sending GPU stats to websocket: {e}")
+            dead_websockets.add(ws)
+
+    # Clean up dead connections
+    websockets.difference_update(dead_websockets)
+
+
+async def gpu_monitor_loop():
+    """Background task to periodically collect and broadcast GPU stats"""
+    global gpu_monitor
+
+    if not gpu_monitor:
+        logger.warning("GPU monitor not initialized, skipping monitoring")
+        return
+
+    logger.info("GPU monitoring loop started")
+
+    try:
+        while True:
+            # Get current stats
+            stats = gpu_monitor.get_stats()
+
+            # Add history
+            stats["history"] = gpu_monitor.get_history()
+
+            # Broadcast to all connected clients
+            broadcast_gpu_stats(stats)
+
+            # Update every 1 second
+            await asyncio.sleep(1.0)
+    except asyncio.CancelledError:
+        logger.info("GPU monitoring loop cancelled")
+    except Exception as e:
+        logger.error(f"Error in GPU monitoring loop: {e}")
 
 
 async def offer(request):
@@ -210,9 +265,43 @@ async def offer(request):
     )
 
 
+async def on_startup(app):
+    """Initialize resources on server startup"""
+    global gpu_monitor, gpu_monitor_task
+
+    # Initialize GPU monitor
+    try:
+        gpu_monitor = create_monitor()
+        logger.info("GPU monitor initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize GPU monitor: {e}")
+        gpu_monitor = None
+
+    # Start GPU monitoring background task
+    if gpu_monitor:
+        gpu_monitor_task = asyncio.create_task(gpu_monitor_loop())
+        logger.info("GPU monitoring task started")
+
+
 async def on_shutdown(app):
     """Cleanup on server shutdown"""
+    global gpu_monitor, gpu_monitor_task
+
     logger.info("Shutting down server...")
+
+    # Stop GPU monitoring task
+    if gpu_monitor_task:
+        gpu_monitor_task.cancel()
+        try:
+            await gpu_monitor_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("GPU monitoring task stopped")
+
+    # Cleanup GPU monitor
+    if gpu_monitor:
+        gpu_monitor.cleanup()
+        logger.info("GPU monitor cleaned up")
 
     # Close all websockets
     for ws in list(websockets):
@@ -279,6 +368,7 @@ def main():
     app.router.add_get("/models", models)
     app.router.add_get("/ws", websocket_handler)
     app.router.add_post("/offer", offer)
+    app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
     # Setup SSL if certificates provided

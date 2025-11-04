@@ -44,7 +44,7 @@ class VLMService:
         self.current_response = "Initializing..."
         self.is_processing = False
         self._processing_lock = asyncio.Lock()
-        
+
         # Metrics tracking
         self.last_inference_time = 0.0  # seconds
         self.total_inferences = 0
@@ -66,7 +66,7 @@ class VLMService:
 
         try:
             start_time = time.perf_counter()
-            
+
             # Convert PIL Image to base64
             img_byte_arr = io.BytesIO()
             image.save(img_byte_arr, format='JPEG')
@@ -103,7 +103,7 @@ class VLMService:
             # Calculate latency
             end_time = time.perf_counter()
             inference_time = end_time - start_time
-            
+
             # Update metrics
             self.last_inference_time = inference_time
             self.total_inferences += 1
@@ -147,17 +147,17 @@ class VLMService:
             Tuple of (response, is_processing)
         """
         return self.current_response, self.is_processing
-    
+
     def get_metrics(self) -> dict:
         """
         Get current performance metrics
-        
+
         Returns:
             Dict with latency and throughput metrics
         """
-        avg_latency = (self.total_inference_time / self.total_inferences 
+        avg_latency = (self.total_inference_time / self.total_inferences
                       if self.total_inferences > 0 else 0.0)
-        
+
         return {
             "last_latency_ms": self.last_inference_time * 1000,
             "avg_latency_ms": avg_latency * 1000,

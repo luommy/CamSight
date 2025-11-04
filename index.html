@@ -239,6 +239,68 @@
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
         }
 
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+            transition: width 0.3s ease;
+        }
+
+        .stat-bar-fill.high {
+            background: linear-gradient(90deg, #ff9800 0%, #ff5722 100%);
+        }
+
+        .sparkline {
+            width: 100%;
+            height: 40px;
+            margin-top: 10px;
+        }
+
+        .gpu-name {
+            color: #667eea;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding: 5px 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 5px;
+            text-align: center;
+        }
+
         .status {
             text-align: center;
             margin-top: 20px;
@@ -318,6 +380,54 @@
                 </div>
             </div>
 
+            <!-- GPU Stats -->
+            <div class="control-panel" id="gpuStatsPanel">
+                <h3>📊 System Stats</h3>
+                <div id="gpuName" class="gpu-name">Loading...</div>
+
+                <div class="control-section">
+                    <!-- GPU Utilization -->
+                    <div class="stat-row">
+                        <span class="stat-label">GPU Util:</span>
+                        <span class="stat-value" id="gpuUtil">-- %</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="gpuUtilBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="gpuUtilSparkline" class="sparkline"></canvas>
+
+                    <!-- VRAM Usage -->
+                    <div class="stat-row" style="margin-top: 15px;">
+                        <span class="stat-label">VRAM:</span>
+                        <span class="stat-value" id="vramUsage">-- / -- GB</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="vramBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="vramSparkline" class="sparkline"></canvas>
+
+                    <!-- CPU Utilization -->
+                    <div class="stat-row" style="margin-top: 15px;">
+                        <span class="stat-label">CPU Util:</span>
+                        <span class="stat-value" id="cpuUtil">-- %</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="cpuBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="cpuSparkline" class="sparkline"></canvas>
+
+                    <!-- RAM Usage -->
+                    <div class="stat-row" style="margin-top: 15px;">
+                        <span class="stat-label">RAM:</span>
+                        <span class="stat-value" id="ramUsage">-- / -- GB</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="ramBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="ramSparkline" class="sparkline"></canvas>
+                </div>
+            </div>
+
             <!-- Model Selection -->
             <div class="control-panel">
                 <h3>🤖 Model Selection</h3>
@@ -372,7 +482,7 @@
                         <div><span class="label">Count:</span> <span class="value" id="countValue">--</span></div>
                     </div>
                 </div>
-                
+
                 <div id="textOverlay" class="text-overlay">
                     <span id="vlmText">Waiting for connection...</span>
                 </div>
@@ -441,7 +551,7 @@
                 modelSelect.innerHTML = '<option value="">Loading models...</option>';
                 const response = await fetch('/models');
                 const data = await response.json();
-                
+
                 if (data.models && data.models.length > 0) {
                     modelSelect.innerHTML = '';
                     data.models.forEach(model => {
@@ -472,17 +582,124 @@
                     type: 'update_model',
                     model: newModel
                 }));
-                updateStatus('Model updated!', 'connected');
+                updateStatus('Model configured: ' + newModel, 'connected');
             } else {
-                alert('Please start the VLM analysis first');
+                updateStatus('Waiting for connection...', 'connecting');
+                // Will be sent once WebSocket connects
             }
         });
 
         // Refresh models button
         refreshModelsBtn.addEventListener('click', fetchModels);
 
-        // Load models on page load
-        window.addEventListener('load', fetchModels);
+        // Load models and connect WebSocket on page load
+        window.addEventListener('load', () => {
+            fetchModels();
+            connectWebSocket(); // Connect early for GPU stats
+        });
+
+        // GPU Stats handling
+        function drawSparkline(canvas, data, color = '#4CAF50') {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            if (!data || data.length === 0) return;
+
+            // Find min/max for scaling
+            const max = Math.max(...data, 1);
+            const min = 0;
+            const range = max - min || 1;
+
+            // Draw line
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const step = width / (data.length - 1 || 1);
+            data.forEach((value, index) => {
+                const x = index * step;
+                const y = height - ((value - min) / range) * height;
+
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+
+            // Fill area under line
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fillStyle = color + '20'; // 20% opacity
+            ctx.fill();
+        }
+
+        function updateGPUStats(stats) {
+            // Update GPU name/platform
+            document.getElementById('gpuName').textContent = stats.gpu_name || 'Unknown GPU';
+
+            // GPU Utilization
+            const gpuPercent = stats.gpu_percent || 0;
+            document.getElementById('gpuUtil').textContent = `${gpuPercent.toFixed(1)}%`;
+            const gpuBar = document.getElementById('gpuUtilBar');
+            gpuBar.style.width = `${gpuPercent}%`;
+            gpuBar.className = gpuPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+
+            // VRAM Usage
+            const vramUsed = stats.vram_used_gb || 0;
+            const vramTotal = stats.vram_total_gb || 0;
+            const vramPercent = stats.vram_percent || 0;
+            document.getElementById('vramUsage').textContent = `${vramUsed.toFixed(1)} / ${vramTotal.toFixed(1)} GB`;
+            const vramBar = document.getElementById('vramBar');
+            vramBar.style.width = `${vramPercent}%`;
+            vramBar.className = vramPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+
+            // CPU Utilization
+            const cpuPercent = stats.cpu_percent || 0;
+            document.getElementById('cpuUtil').textContent = `${cpuPercent.toFixed(1)}%`;
+            const cpuBar = document.getElementById('cpuBar');
+            cpuBar.style.width = `${cpuPercent}%`;
+            cpuBar.className = cpuPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+
+            // RAM Usage
+            const ramUsed = stats.ram_used_gb || 0;
+            const ramTotal = stats.ram_total_gb || 0;
+            const ramPercent = stats.ram_percent || 0;
+            document.getElementById('ramUsage').textContent = `${ramUsed.toFixed(1)} / ${ramTotal.toFixed(1)} GB`;
+            const ramBar = document.getElementById('ramBar');
+            ramBar.style.width = `${ramPercent}%`;
+            ramBar.className = ramPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+
+            // Update sparklines
+            if (stats.history) {
+                const gpuCanvas = document.getElementById('gpuUtilSparkline');
+                const vramCanvas = document.getElementById('vramSparkline');
+                const cpuCanvas = document.getElementById('cpuSparkline');
+                const ramCanvas = document.getElementById('ramSparkline');
+
+                // Set canvas size to match display size
+                gpuCanvas.width = gpuCanvas.offsetWidth;
+                gpuCanvas.height = gpuCanvas.offsetHeight;
+                vramCanvas.width = vramCanvas.offsetWidth;
+                vramCanvas.height = vramCanvas.offsetHeight;
+                cpuCanvas.width = cpuCanvas.offsetWidth;
+                cpuCanvas.height = cpuCanvas.offsetHeight;
+                ramCanvas.width = ramCanvas.offsetWidth;
+                ramCanvas.height = ramCanvas.offsetHeight;
+
+                drawSparkline(gpuCanvas, stats.history.gpu_util, '#4CAF50');
+                drawSparkline(vramCanvas, stats.history.vram_used, '#2196F3');
+                drawSparkline(cpuCanvas, stats.history.cpu_util, '#FF9800');
+                drawSparkline(ramCanvas, stats.history.ram_used, '#9C27B0');
+            }
+        }
 
         // Handle preset selection
         promptPreset.addEventListener('change', (e) => {
@@ -504,20 +721,30 @@
                     type: 'update_prompt',
                     prompt: newPrompt
                 }));
-                updateStatus('Prompt updated!', 'connected');
+                updateStatus('Prompt configured', 'connected');
 
                 // Visual feedback
-                updatePromptBtn.textContent = '✓ Updated!';
+                updatePromptBtn.textContent = '✓ Configured!';
                 setTimeout(() => {
                     updatePromptBtn.textContent = 'Update Prompt';
                 }, 2000);
             } else {
-                alert('Please start the VLM analysis first');
+                updateStatus('Waiting for connection...', 'connecting');
+                // Visual feedback
+                updatePromptBtn.textContent = '⏳ Pending...';
+                setTimeout(() => {
+                    updatePromptBtn.textContent = 'Update Prompt';
+                }, 2000);
             }
         });
 
         // Connect to WebSocket for text updates
         function connectWebSocket() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                console.log('WebSocket already connected');
+                return;
+            }
+
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws`;
 
@@ -525,6 +752,7 @@
 
             websocket.onopen = () => {
                 console.log('WebSocket connected');
+                updateStatus('Connected to server', 'connected');
             };
 
             websocket.onmessage = (event) => {
@@ -558,6 +786,9 @@
                         avgLatencyValue.textContent = Math.round(data.metrics.avg_latency_ms);
                         countValue.textContent = data.metrics.total_inferences;
                     }
+                } else if (data.type === 'gpu_stats') {
+                    // Update GPU stats
+                    updateGPUStats(data.stats);
                 } else if (data.type === 'status') {
                     vlmText.textContent = data.text;
                 }
@@ -568,9 +799,10 @@
             };
 
             websocket.onclose = () => {
-                console.log('WebSocket disconnected');
-                vlmText.textContent = 'Disconnected from server';
-                vlmStatus.textContent = 'Offline';
+                console.log('WebSocket disconnected, will auto-reconnect...');
+                websocket = null;
+                // Auto-reconnect after 2 seconds (keeps GPU stats persistent)
+                setTimeout(connectWebSocket, 2000);
             };
         }
 
@@ -683,8 +915,8 @@
 
         // Stop WebRTC connection
         function stop() {
-            // Disconnect WebSocket
-            disconnectWebSocket();
+            // Keep WebSocket connected for GPU stats
+            // disconnectWebSocket();
 
             // Clear fade timeout
             if (fadeTimeout) {
@@ -713,12 +945,11 @@
             updateStatus('Stopped', 'disconnected');
 
             // Reset text overlay
-            vlmText.textContent = 'Waiting for connection...';
+            vlmText.textContent = 'Click "Start VLM Analysis" to begin';
             textOverlay.classList.remove('fade');
             lastText = '';
 
-            // Hide metrics
-            metricsDiv.style.display = 'none';
+            // Keep metrics visible (cumulative stats remain)
         }
 
         // Event listeners

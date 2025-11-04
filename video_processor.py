@@ -61,10 +61,10 @@ class VideoProcessorTrack(VideoStreamTrack):
 
             # Get current response (may be old if VLM is still processing)
             response, is_processing = self.vlm_service.get_current_response()
-            
+
             # Get metrics
             metrics = self.vlm_service.get_metrics()
-            
+
             # Send text update via callback (for WebSocket)
             if self.text_callback:
                 self.text_callback(response, metrics)
