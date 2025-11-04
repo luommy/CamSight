@@ -4,12 +4,78 @@ Supports multiple platforms: NVIDIA (NVML), Jetson Orin (tegrastats), Apple Sili
 """
 import asyncio
 import logging
+import platform
 import psutil
+import socket
+import subprocess
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, List
 from collections import deque
 
 logger = logging.getLogger(__name__)
+
+
+def get_cpu_model() -> str:
+    """
+    Get CPU model name in a cross-platform way
+    
+    Returns:
+        CPU model string, or 'Unknown CPU' if not available
+    """
+    try:
+        # Try different methods based on platform
+        system = platform.system()
+        
+        if system == "Linux":
+            # Read from /proc/cpuinfo
+            try:
+                with open("/proc/cpuinfo", "r") as f:
+                    for line in f:
+                        if line.startswith("model name"):
+                            return line.split(":")[1].strip()
+            except:
+                pass
+        
+        elif system == "Darwin":  # macOS
+            # Use sysctl to get CPU brand string
+            try:
+                result = subprocess.run(
+                    ["sysctl", "-n", "machdep.cpu.brand_string"],
+                    capture_output=True,
+                    text=True,
+                    timeout=1
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    return result.stdout.strip()
+            except:
+                pass
+        
+        elif system == "Windows":
+            # Use WMIC
+            try:
+                result = subprocess.run(
+                    ["wmic", "cpu", "get", "name"],
+                    capture_output=True,
+                    text=True,
+                    timeout=1
+                )
+                if result.returncode == 0:
+                    lines = result.stdout.strip().split("\n")
+                    if len(lines) > 1:
+                        return lines[1].strip()
+            except:
+                pass
+        
+        # Fallback to platform.processor()
+        proc = platform.processor()
+        if proc and proc.strip():
+            return proc.strip()
+        
+        return "Unknown CPU"
+        
+    except Exception as e:
+        logger.warning(f"Failed to get CPU model: {e}")
+        return "Unknown CPU"
 
 
 class GPUMonitor(ABC):
@@ -43,20 +109,26 @@ class GPUMonitor(ABC):
         try:
             cpu_percent = psutil.cpu_percent(interval=0.1)
             memory = psutil.virtual_memory()
-
+            hostname = socket.gethostname()
+            cpu_model = get_cpu_model()
+            
             return {
                 "cpu_percent": cpu_percent,
+                "cpu_model": cpu_model,
                 "ram_used_gb": memory.used / (1024**3),
                 "ram_total_gb": memory.total / (1024**3),
-                "ram_percent": memory.percent
+                "ram_percent": memory.percent,
+                "hostname": hostname
             }
         except Exception as e:
             logger.error(f"Error getting CPU/RAM stats: {e}")
             return {
                 "cpu_percent": 0,
+                "cpu_model": "Unknown CPU",
                 "ram_used_gb": 0,
                 "ram_total_gb": 0,
-                "ram_percent": 0
+                "ram_percent": 0,
+                "hostname": "Unknown"
             }
 
     def update_history(self, stats: Dict):

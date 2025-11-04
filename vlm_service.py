@@ -23,7 +23,8 @@ class VLMService:
         model: str,
         api_base: str = "http://localhost:8000/v1",
         api_key: str = "EMPTY",
-        prompt: str = "Describe what you see in this image in one sentence."
+        prompt: str = "Describe what you see in this image in one sentence.",
+        max_tokens: int = 512
     ):
         """
         Initialize VLM service
@@ -33,10 +34,12 @@ class VLMService:
             api_base: Base URL for the API (e.g., "http://localhost:8000/v1" for vLLM)
             api_key: API key (use "EMPTY" for local servers)
             prompt: Default prompt to use for image analysis
+            max_tokens: Maximum tokens to generate
         """
         self.model = model
         self.api_base = api_base
         self.prompt = prompt
+        self.max_tokens = max_tokens
         self.client = AsyncOpenAI(
             base_url=api_base,
             api_key=api_key
@@ -96,7 +99,7 @@ class VLMService:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                max_tokens=512,
+                max_tokens=self.max_tokens,
                 temperature=0.7
             )
 
@@ -165,12 +168,17 @@ class VLMService:
             "is_processing": self.is_processing
         }
 
-    def update_prompt(self, new_prompt: str) -> None:
+    def update_prompt(self, new_prompt: str, max_tokens: Optional[int] = None) -> None:
         """
-        Update the default prompt
+        Update the default prompt and optionally max_tokens
 
         Args:
             new_prompt: New prompt to use
+            max_tokens: Maximum tokens to generate (optional)
         """
         self.prompt = new_prompt
-        logger.info(f"Updated prompt to: {new_prompt}")
+        if max_tokens is not None:
+            self.max_tokens = max_tokens
+            logger.info(f"Updated prompt to: {new_prompt}, max_tokens: {max_tokens}")
+        else:
+            logger.info(f"Updated prompt to: {new_prompt}")

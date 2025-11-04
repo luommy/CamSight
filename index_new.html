@@ -77,11 +77,10 @@
         }
 
         .logo {
-            font-size: 28px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--accent-color);
             letter-spacing: -0.5px;
-            line-height: 1;
         }
 
         .title-section h1 {
@@ -257,30 +256,12 @@
         .btn-primary {
             background: var(--accent-color);
             color: white;
-            border: 1px solid var(--accent-color);
         }
 
         .btn-primary:hover {
             background: var(--accent-hover);
-            border-color: var(--accent-hover);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(118, 185, 0, 0.3);
-        }
-
-        /* Tab-style underline (for future use) */
-        .tab-item {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: border-color 0.2s;
-        }
-
-        .tab-item.active {
-            border-bottom-color: var(--accent-color);
-        }
-
-        .tab-item:hover {
-            border-bottom-color: var(--accent-hover);
         }
 
         .btn-secondary {
@@ -298,36 +279,6 @@
             cursor: not-allowed;
         }
 
-        .icon-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            padding: 0;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .icon-btn:hover:not(:disabled) {
-            background: var(--card-hover);
-            border-color: var(--accent-color);
-            transform: scale(1.1);
-        }
-
-        .icon-btn:active:not(:disabled) {
-            transform: scale(0.95);
-        }
-
-        .icon-btn:disabled {
-            cursor: not-allowed;
-        }
-
         .input-hint {
             font-size: 11px;
             color: var(--text-muted);
@@ -341,6 +292,36 @@
             padding: 20px;
         }
 
+        .control-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn-large {
+            flex: 1;
+            padding: 16px;
+            font-size: 15px;
+            border-radius: 8px;
+        }
+
+        .btn-success {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            filter: brightness(1.1);
+        }
 
         /* Status Badge */
         .status-badge {
@@ -376,49 +357,12 @@
             border-radius: 12px;
             overflow: hidden;
             margin-bottom: 20px;
-            position: relative;
         }
 
         video {
             width: 100%;
             display: block;
             background: #000;
-            transition: transform 0.3s ease;
-        }
-
-        video.mirrored {
-            transform: scaleX(-1);
-        }
-
-        .video-controls {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            display: flex;
-            gap: 8px;
-            z-index: 10;
-        }
-
-        .video-control-btn {
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-        }
-
-        .video-control-btn:hover {
-            background: rgba(0, 0, 0, 0.9);
-            border-color: var(--accent-color);
-        }
-
-        .video-control-btn.active {
-            background: var(--accent-color);
-            border-color: var(--accent-color);
         }
 
         /* Generation Result */
@@ -433,12 +377,8 @@
         .result-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .result-header-left {
-            flex: 1;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
         .result-title {
@@ -447,25 +387,14 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 6px;
-        }
-
-        .result-subtitle {
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.4;
         }
 
         .result-prompt {
             font-size: 11px;
             color: var(--text-muted);
             font-style: italic;
-            margin-top: 16px;
-            margin-bottom: 12px;
-            padding: 8px 12px;
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-            border-left: 3px solid var(--accent-color);
+            margin-bottom: 10px;
+            opacity: 0.7;
         }
 
         .result-text {
@@ -473,7 +402,6 @@
             line-height: 1.6;
             color: var(--text-primary);
             transition: opacity 3s ease;
-            min-height: 60px;
         }
 
         .result-text.fade {
@@ -609,10 +537,10 @@
     <!-- Header -->
     <div class="header">
         <div class="header-left">
-            <div class="logo">🎥</div>
+            <div class="logo">⚡ NVIDIA</div>
             <div class="title-section">
                 <h1>Live VLM WebUI</h1>
-                <div class="subtitle">Real-time Vision Language Model Benchmark/Evaluation Tool</div>
+                <div class="subtitle">Real-time Vision Language Model Platform</div>
             </div>
         </div>
         <div class="header-right">
@@ -627,12 +555,12 @@
     <div class="container">
         <!-- Left Sidebar -->
         <div class="sidebar">
-            <!-- VLM API Configuration -->
+            <!-- VLM Server Config -->
             <div class="panel">
                 <div class="panel-header" onclick="togglePanel('vlmConfig')">
                     <div class="panel-title">
                         <span class="panel-icon">⚙️</span>
-                        VLM API Configuration
+                        VLM Server Configuration
                     </div>
                     <span class="panel-toggle" id="vlmConfigToggle">▼</span>
                 </div>
@@ -648,28 +576,13 @@
                         <div class="input-hint">Required for OpenAI, Anthropic, etc.</div>
                     </div>
                     <div class="form-group">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <label style="margin-bottom: 0;">Model Selection</label>
-                            <div style="display: flex; gap: 6px;">
-                                <button class="icon-btn" id="refreshModelsBtn" title="Refresh available models">🔄</button>
-                                <button class="icon-btn" id="downloadModelBtn" title="Download new model (coming soon)" disabled style="opacity: 0.5;">➕</button>
-                            </div>
-                        </div>
+                        <label>Model Selection</label>
                         <select id="modelSelect">
                             <option value="">Loading models...</option>
                         </select>
+                        <button class="btn btn-secondary" id="refreshModelsBtn" style="margin-top: 8px;">Refresh Models</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Analysis Control Buttons -->
-            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
-                <button class="btn btn-primary" id="startBtn" style="flex: 1; padding: 12px;">
-                    ▶️ Start Analysis
-                </button>
-                <button class="btn btn-secondary" id="stopBtn" disabled style="flex: 1; padding: 12px;">
-                    ⏹️ Stop
-                </button>
             </div>
 
             <!-- Prompt Editor -->
@@ -705,54 +618,32 @@
                         <input type="number" id="maxTokens" value="512" min="1" max="4096" step="1">
                         <div class="input-hint">Lower for short answers (Yes/No: ~10), higher for detailed descriptions</div>
                     </div>
-                    <button class="btn btn-secondary" id="updatePromptBtn">Apply Prompt Settings</button>
-                </div>
-            </div>
-
-            <!-- Processing Config -->
-            <div class="panel">
-                <div class="panel-header" onclick="togglePanel('processingConfig')">
-                    <div class="panel-title">
-                        <span class="panel-icon">⚡</span>
-                        Processing Settings
-                    </div>
-                    <span class="panel-toggle" id="processingConfigToggle">▼</span>
-                </div>
-                <div class="panel-content" id="processingConfig">
-                    <div class="form-group">
-                        <label>Frame Processing Interval</label>
-                        <input type="number" id="processEvery" value="30" min="1" max="3600" step="1">
-                        <div class="input-hint">
-                            Process every Nth frame (Lower = more frequent analysis, higher GPU usage)
-                            <br>• 5 frames @ 30fps = ~6 FPS analysis (fast)
-                            <br>• 30 frames @ 30fps = ~1 FPS analysis (default)
-                            <br>• 300 frames @ 30fps = ~0.1 FPS analysis (10 sec interval)
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary" id="updateProcessingBtn">Apply Settings</button>
+                    <button class="btn btn-primary" id="updatePromptBtn">Apply Prompt Settings</button>
                 </div>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
+            <!-- Control Bar -->
+            <div class="control-bar">
+                <button class="btn btn-large btn-success" id="startBtn">
+                    ▶️ Start VLM Analysis
+                </button>
+                <button class="btn btn-large btn-danger" id="stopBtn" disabled>
+                    ⏹️ Stop Analysis
+                </button>
+            </div>
+
             <!-- Video Feed -->
             <div class="video-card">
-                <div class="video-controls">
-                    <button class="video-control-btn" id="mirrorBtn" title="Mirror video">🔄 Mirror</button>
-                </div>
                 <video id="videoElement" autoplay playsinline muted></video>
             </div>
 
             <!-- Generation Result -->
             <div class="result-card">
                 <div class="result-header">
-                    <div class="result-header-left">
-                        <div class="result-title">🤖 VLM OUTPUT</div>
-                        <div class="result-subtitle">
-                            Model: <span id="modelName">--</span>
-                        </div>
-                    </div>
+                    <div class="result-title">🤖 VLM Output</div>
                     <div class="metrics-inline" id="metricsInline" style="display: none;">
                         <div class="metric-item">
                             <span>Latency:</span>
@@ -770,67 +661,61 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="result-prompt" id="currentPrompt">Waiting to start...</div>
                 <div class="result-text" id="resultText">Click "Start VLM Analysis" to begin</div>
             </div>
 
             <!-- System Stats -->
-            <div class="result-card">
-                <div class="result-header">
-                    <div class="result-title">
-                        📊 System Stats
-                        <span style="font-weight: 400; font-size: 11px; color: var(--text-muted); text-transform: none;">
-                            (<span id="systemInfoHeader">Loading...</span>)
-                        </span>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">GPU Utilization</span>
+                        <span class="stat-value" id="gpuUtil">--%</span>
                     </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="gpuUtilBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="gpuUtilSparkline" class="sparkline"></canvas>
                 </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <span class="stat-label">GPU Utilization</span>
-                            <span class="stat-value" id="gpuUtil">--%</span>
-                        </div>
-                        <div class="stat-bar">
-                            <div class="stat-bar-fill" id="gpuUtilBar" style="width: 0%"></div>
-                        </div>
-                        <canvas id="gpuUtilSparkline" class="sparkline"></canvas>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">VRAM Usage</span>
+                        <span class="stat-value" id="vramUsage">-- GB</span>
                     </div>
-
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <span class="stat-label">VRAM Usage</span>
-                            <span class="stat-value" id="vramUsage">-- GB</span>
-                        </div>
-                        <div class="stat-bar">
-                            <div class="stat-bar-fill" id="vramBar" style="width: 0%"></div>
-                        </div>
-                        <canvas id="vramSparkline" class="sparkline"></canvas>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="vramBar" style="width: 0%"></div>
                     </div>
-
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <span class="stat-label">CPU Utilization</span>
-                            <span class="stat-value" id="cpuUtil">--%</span>
-                        </div>
-                        <div class="stat-bar">
-                            <div class="stat-bar-fill" id="cpuBar" style="width: 0%"></div>
-                        </div>
-                        <canvas id="cpuSparkline" class="sparkline"></canvas>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <span class="stat-label">System RAM</span>
-                            <span class="stat-value" id="ramUsage">-- GB</span>
-                        </div>
-                        <div class="stat-bar">
-                            <div class="stat-bar-fill" id="ramBar" style="width: 0%"></div>
-                        </div>
-                        <canvas id="ramSparkline" class="sparkline"></canvas>
-                    </div>
+                    <canvas id="vramSparkline" class="sparkline"></canvas>
                 </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">CPU Utilization</span>
+                        <span class="stat-value" id="cpuUtil">--%</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="cpuBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="cpuSparkline" class="sparkline"></canvas>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">System RAM</span>
+                        <span class="stat-value" id="ramUsage">-- GB</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="ramBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="ramSparkline" class="sparkline"></canvas>
+                </div>
+            </div>
+
+            <!-- GPU Name -->
+            <div class="info-box" style="margin-top: 16px;">
+                <h3 id="gpuName">System Information</h3>
+                <span id="gpuPlatform" style="font-size: 12px; color: var(--text-muted);">Loading...</span>
             </div>
         </div>
     </div>
@@ -856,16 +741,12 @@
         const updatePromptBtn = document.getElementById('updatePromptBtn');
         const modelSelect = document.getElementById('modelSelect');
         const refreshModelsBtn = document.getElementById('refreshModelsBtn');
-        const processEvery = document.getElementById('processEvery');
-        const updateProcessingBtn = document.getElementById('updateProcessingBtn');
-        const mirrorBtn = document.getElementById('mirrorBtn');
 
         let peerConnection = null;
         let localStream = null;
         let websocket = null;
         let fadeTimeout = null;
         let lastText = '';
-        let isAnalysisRunning = false;
 
         // Theme Toggle
         themeToggle.addEventListener('click', () => {
@@ -906,22 +787,15 @@
 
                 if (data.models && data.models.length > 0) {
                     modelSelect.innerHTML = '';
-                    let currentModel = null;
                     data.models.forEach(model => {
                         const option = document.createElement('option');
                         option.value = model.id;
                         option.textContent = model.id;
                         if (model.current) {
                             option.selected = true;
-                            currentModel = model.id;
                         }
                         modelSelect.appendChild(option);
                     });
-
-                    // Update model name in VLM output header
-                    if (currentModel) {
-                        document.getElementById('modelName').textContent = currentModel;
-                    }
                 } else {
                     modelSelect.innerHTML = '<option value="">No models available</option>';
                 }
@@ -935,9 +809,6 @@
         modelSelect.addEventListener('change', (e) => {
             const newModel = e.target.value;
             if (!newModel) return;
-
-            // Update model name in VLM output header
-            document.getElementById('modelName').textContent = newModel;
 
             if (websocket && websocket.readyState === WebSocket.OPEN) {
                 websocket.send(JSON.stringify({
@@ -972,8 +843,7 @@
                     max_tokens: tokens
                 }));
 
-                // Update the displayed prompt
-                currentPrompt.textContent = `Prompt: "${newPrompt.substring(0, 100)}${newPrompt.length > 100 ? '...' : ''}" | Max tokens: ${tokens}`;
+                currentPrompt.textContent = `Prompt: "${newPrompt}" | Max tokens: ${tokens}`;
                 updateStatus('Prompt configured', 'connected');
 
                 updatePromptBtn.textContent = '✓ Applied';
@@ -986,32 +856,6 @@
         });
 
         refreshModelsBtn.addEventListener('click', fetchModels);
-
-        // Mirror video toggle
-        mirrorBtn.addEventListener('click', () => {
-            videoElement.classList.toggle('mirrored');
-            mirrorBtn.classList.toggle('active');
-        });
-
-        // Processing interval update
-        updateProcessingBtn.addEventListener('click', () => {
-            const interval = parseInt(processEvery.value) || 30;
-
-            if (websocket && websocket.readyState === WebSocket.OPEN) {
-                websocket.send(JSON.stringify({
-                    type: 'update_processing',
-                    process_every: interval
-                }));
-
-                updateStatus('Processing interval updated', 'connected');
-                updateProcessingBtn.textContent = '✓ Applied';
-                setTimeout(() => {
-                    updateProcessingBtn.textContent = 'Apply Settings';
-                }, 2000);
-            } else {
-                updateStatus('Waiting for connection...', 'disconnected');
-            }
-        });
 
         // Sparkline Drawing
         function drawSparkline(canvas, data, color) {
@@ -1052,11 +896,8 @@
 
         // Update GPU Stats
         function updateGPUStats(stats) {
-            // Update system info header (e.g., "hostname (Intel Core i9-13900K) with NVIDIA RTX 6000 Ada")
-            const hostname = stats.hostname || 'System';
-            const cpuModel = stats.cpu_model || 'Unknown CPU';
-            const gpuName = stats.gpu_name || 'Unknown GPU';
-            document.getElementById('systemInfoHeader').textContent = `${hostname} (${cpuModel}) with ${gpuName}`;
+            document.getElementById('gpuName').textContent = stats.gpu_name || 'Unknown GPU';
+            document.getElementById('gpuPlatform').textContent = stats.platform || 'Unknown Platform';
 
             // GPU
             const gpuPercent = stats.gpu_percent || 0;
@@ -1240,7 +1081,6 @@
 
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
-                isAnalysisRunning = true;
                 updateStatus('Streaming', 'connected');
 
             } catch (error) {
@@ -1271,7 +1111,6 @@
 
             startBtn.disabled = false;
             stopBtn.disabled = true;
-            isAnalysisRunning = false;
             updateStatus('Connected', 'connected');
 
             resultText.textContent = 'Click "Start VLM Analysis" to begin';
@@ -1286,13 +1125,6 @@
         window.addEventListener('load', () => {
             fetchModels();
             connectWebSocket();
-
-            // Initialize prompt display
-            const initialPrompt = promptText.value.trim();
-            const tokens = parseInt(maxTokens.value) || 512;
-            if (initialPrompt) {
-                currentPrompt.textContent = `Prompt: "${initialPrompt.substring(0, 100)}${initialPrompt.length > 100 ? '...' : ''}" | Max tokens: ${tokens}`;
-            }
         });
     </script>
 </body>

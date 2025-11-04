@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live VLM WebUI - Real-time Vision AI</title>
+    <style>
+        :root {
+            /* NVIDIA-inspired color palette */
+            --nvidia-green: #76B900;
+            --primary-purple: #6F3AFA;
+            --primary-blue: #4A90E2;
+            --gradient-start: #4A90E2;
+            --gradient-end: #6F3AFA;
+            
+            /* Dark theme (default) */
+            --bg-primary: #0A0E1A;
+            --bg-secondary: #151B2E;
+            --bg-tertiary: #1E2538;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B0B8C8;
+            --text-muted: #6B7280;
+            --border-color: #2D3748;
+            --card-bg: #151B2E;
+            --card-hover: #1E2538;
+            --success-color: #76B900;
+            --warning-color: #FFA726;
+            --error-color: #EF5350;
+        }
+
+        body.light-theme {
+            /* Light theme */
+            --bg-primary: #F7F9FC;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F0F4F8;
+            --text-primary: #1A202C;
+            --text-secondary: #4A5568;
+            --text-muted: #718096;
+            --border-color: #E2E8F0;
+            --card-bg: #FFFFFF;
+            --card-hover: #F7FAFC;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1600px;
+            width: 100%;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            width: 350px;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .header {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .video-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .text-overlay {
+            background: rgba(0, 0, 0, 0.9);
+            color: #4CAF50;
+            padding: 20px 25px;
+            font-size: 18px;
+            line-height: 1.5;
+            border-radius: 15px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            transition: all 3s ease-out;
+            margin-top: 20px;
+        }
+
+        .text-overlay.fade {
+            color: #888;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .metrics {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #4CAF50;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .metrics div {
+            margin: 2px 0;
+        }
+
+        .metrics .label {
+            color: #aaa;
+            display: inline-block;
+            width: 80px;
+        }
+
+        .metrics .value {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-panel h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-panel label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .control-panel select,
+        .control-panel textarea,
+        .control-panel input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            margin-bottom: 12px;
+            transition: border-color 0.3s ease;
+        }
+
+        .control-panel select:focus,
+        .control-panel textarea:focus,
+        .control-panel input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .control-panel textarea {
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.5;
+        }
+
+        .control-panel .btn-update,
+        .control-panel .btn-action {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .control-panel .btn-update:hover:not(:disabled),
+        .control-panel .btn-action:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-panel .btn-update:disabled,
+        .control-panel .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .toggle-section {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 500px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+            transition: width 0.3s ease;
+        }
+
+        .stat-bar-fill.high {
+            background: linear-gradient(90deg, #ff9800 0%, #ff5722 100%);
+        }
+
+        .sparkline {
+            width: 100%;
+            height: 40px;
+            margin-top: 10px;
+        }
+
+        .gpu-name {
+            color: #667eea;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding: 5px 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .status.connected {
+            color: #27ae60;
+        }
+
+        .status.disconnected {
+            color: #e74c3c;
+        }
+
+        .status.connecting {
+            color: #f39c12;
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            list-style-position: inside;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .video-container {
+                padding: 20px;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎥 Live VLM WebUI</h1>
+        <p class="subtitle">Real-time vision AI interaction - describe, detect, analyze anything</p>
+    </div>
+
+    <div class="container">
+        <!-- Left Sidebar: Controls -->
+        <div class="sidebar">
+            <!-- Connection Controls -->
+            <div class="control-panel">
+                <h3>⚡ Connection</h3>
+                <button id="startBtn" class="btn-action btn-start">Start VLM Analysis</button>
+                <button id="stopBtn" class="btn-action btn-stop" disabled>Stop Analysis</button>
+                <div id="status" class="status disconnected">
+                    Click "Start" to begin
+                </div>
+            </div>
+
+            <!-- GPU Stats -->
+            <div class="control-panel" id="gpuStatsPanel">
+                <h3>📊 System Stats</h3>
+                <div id="gpuName" class="gpu-name">Loading...</div>
+
+                <div class="control-section">
+                    <!-- GPU Utilization -->
+                    <div class="stat-row">
+                        <span class="stat-label">GPU Util:</span>
+                        <span class="stat-value" id="gpuUtil">-- %</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="gpuUtilBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="gpuUtilSparkline" class="sparkline"></canvas>
+
+                    <!-- VRAM Usage -->
+                    <div class="stat-row" style="margin-top: 15px;">
+                        <span class="stat-label">VRAM:</span>
+                        <span class="stat-value" id="vramUsage">-- / -- GB</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="vramBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="vramSparkline" class="sparkline"></canvas>
+
+                    <!-- CPU Utilization -->
+                    <div class="stat-row" style="margin-top: 15px;">
+                        <span class="stat-label">CPU Util:</span>
+                        <span class="stat-value" id="cpuUtil">-- %</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="cpuBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="cpuSparkline" class="sparkline"></canvas>
+
+                    <!-- RAM Usage -->
+                    <div class="stat-row" style="margin-top: 15px;">
+                        <span class="stat-label">RAM:</span>
+                        <span class="stat-value" id="ramUsage">-- / -- GB</span>
+                    </div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill" id="ramBar" style="width: 0%"></div>
+                    </div>
+                    <canvas id="ramSparkline" class="sparkline"></canvas>
+                </div>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="control-panel">
+                <h3>🤖 Model Selection</h3>
+                <div class="control-section">
+                    <label for="modelSelect">Available Models:</label>
+                    <select id="modelSelect">
+                        <option value="">Loading models...</option>
+                    </select>
+                    <button id="refreshModelsBtn" class="btn-action">Refresh Models</button>
+                </div>
+            </div>
+
+            <!-- Prompt Editor -->
+            <div class="control-panel">
+                <h3 class="toggle-section" onclick="toggleSection('promptSection')">
+                    🎯 Prompt Editor <span id="promptToggle">▼</span>
+                </h3>
+                <div id="promptSection" class="collapsible-content expanded">
+                    <div class="control-section">
+                        <label for="promptPreset">Quick Presets:</label>
+                        <select id="promptPreset">
+                            <option value="">-- Select a preset --</option>
+                            <option value="Describe what you see in this image in one sentence.">Scene Description</option>
+                            <option value="List all objects you can see in this image, separated by commas.">Object Detection</option>
+                            <option value="Describe the person's activity and what they are doing.">Activity Recognition</option>
+                            <option value="Are there any safety hazards visible? Answer with 'ALERT: description' or 'SAFE'.">Safety Monitoring</option>
+                            <option value="Describe the facial expressions and emotions of people visible.">Emotion Detection</option>
+                            <option value="Provide a detailed description of the scene for a visually impaired person.">Accessibility</option>
+                            <option value="Read and transcribe any text visible in the image.">OCR / Text Reading</option>
+                            <option value="What are the dominant colors in this image?">Color Analysis</option>
+                            <option value="How many people are in this image? State locations.">People Counting</option>
+                            <option value="Are there any pets or animals visible? If yes, describe them.">Pet/Animal Detection</option>
+                        </select>
+                    </div>
+                    <div class="control-section">
+                        <label for="promptText">Custom Prompt:</label>
+                        <textarea id="promptText" placeholder="Enter your custom prompt here...">Describe what you see in this image in one sentence.</textarea>
+                        <button id="updatePromptBtn" class="btn-update">Update Prompt</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Main Content: Video Display -->
+        <div class="main-content">
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <video id="videoElement" autoplay playsinline muted></video>
+                    <div id="metrics" class="metrics" style="display: none;">
+                        <div><span class="label">Latency:</span> <span class="value" id="latencyValue">--</span> ms</div>
+                        <div><span class="label">Avg:</span> <span class="value" id="avgLatencyValue">--</span> ms</div>
+                        <div><span class="label">Count:</span> <span class="value" id="countValue">--</span></div>
+                    </div>
+                </div>
+
+                <div id="textOverlay" class="text-overlay">
+                    <span id="vlmText">Waiting for connection...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="max-width: 1600px; margin: 20px auto;">
+        <div class="info-box">
+            <h3>How it works:</h3>
+            <ul>
+                <li>Your webcam video is streamed to the server via WebRTC</li>
+                <li>A Vision Language Model (VLM) analyzes frames based on your custom prompt</li>
+                <li>VLM responses are overlaid on the video and streamed back in real-time</li>
+                <li>Use cases: describe scenes, detect objects, monitor activities, accessibility, and more</li>
+                <li>Works with any OpenAI-compatible API (vLLM, SGLang, Ollama, etc.)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('videoElement');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusElement = document.getElementById('status');
+        const textOverlay = document.getElementById('textOverlay');
+        const vlmText = document.getElementById('vlmText');
+        const metricsDiv = document.getElementById('metrics');
+        const latencyValue = document.getElementById('latencyValue');
+        const avgLatencyValue = document.getElementById('avgLatencyValue');
+        const countValue = document.getElementById('countValue');
+        const promptPreset = document.getElementById('promptPreset');
+        const promptText = document.getElementById('promptText');
+        const updatePromptBtn = document.getElementById('updatePromptBtn');
+        const modelSelect = document.getElementById('modelSelect');
+        const refreshModelsBtn = document.getElementById('refreshModelsBtn');
+
+        let peerConnection = null;
+        let localStream = null;
+        let websocket = null;
+        let fadeTimeout = null;
+        let lastText = '';
+
+        // Update status display
+        function updateStatus(message, state) {
+            statusElement.textContent = message;
+            statusElement.className = `status ${state}`;
+        }
+
+        // Toggle collapsible sections
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const toggle = document.getElementById(sectionId.replace('Section', 'Toggle'));
+            if (section.classList.contains('expanded')) {
+                section.classList.remove('expanded');
+                if (toggle) toggle.textContent = '▶';
+            } else {
+                section.classList.add('expanded');
+                if (toggle) toggle.textContent = '▼';
+            }
+        }
+
+        // Fetch available models from server
+        async function fetchModels() {
+            try {
+                modelSelect.innerHTML = '<option value="">Loading models...</option>';
+                const response = await fetch('/models');
+                const data = await response.json();
+
+                if (data.models && data.models.length > 0) {
+                    modelSelect.innerHTML = '';
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.name || model.id;
+                        if (model.current) {
+                            option.selected = true;
+                        }
+                        modelSelect.appendChild(option);
+                    });
+                } else {
+                    modelSelect.innerHTML = '<option value="">No models available</option>';
+                }
+            } catch (error) {
+                console.error('Error fetching models:', error);
+                modelSelect.innerHTML = '<option value="">Error loading models</option>';
+            }
+        }
+
+        // Handle model change
+        modelSelect.addEventListener('change', async (e) => {
+            const newModel = e.target.value;
+            if (!newModel) return;
+
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.send(JSON.stringify({
+                    type: 'update_model',
+                    model: newModel
+                }));
+                updateStatus('Model configured: ' + newModel, 'connected');
+            } else {
+                updateStatus('Waiting for connection...', 'connecting');
+                // Will be sent once WebSocket connects
+            }
+        });
+
+        // Refresh models button
+        refreshModelsBtn.addEventListener('click', fetchModels);
+
+        // Load models and connect WebSocket on page load
+        window.addEventListener('load', () => {
+            fetchModels();
+            connectWebSocket(); // Connect early for GPU stats
+        });
+
+        // GPU Stats handling
+        function drawSparkline(canvas, data, color = '#4CAF50') {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            if (!data || data.length === 0) return;
+
+            // Find min/max for scaling
+            const max = Math.max(...data, 1);
+            const min = 0;
+            const range = max - min || 1;
+
+            // Draw line
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const step = width / (data.length - 1 || 1);
+            data.forEach((value, index) => {
+                const x = index * step;
+                const y = height - ((value - min) / range) * height;
+
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+
+            // Fill area under line
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fillStyle = color + '20'; // 20% opacity
+            ctx.fill();
+        }
+
+        function updateGPUStats(stats) {
+            // Update GPU name/platform
+            document.getElementById('gpuName').textContent = stats.gpu_name || 'Unknown GPU';
+
+            // GPU Utilization
+            const gpuPercent = stats.gpu_percent || 0;
+            document.getElementById('gpuUtil').textContent = `${gpuPercent.toFixed(1)}%`;
+            const gpuBar = document.getElementById('gpuUtilBar');
+            gpuBar.style.width = `${gpuPercent}%`;
+            gpuBar.className = gpuPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+
+            // VRAM Usage
+            const vramUsed = stats.vram_used_gb || 0;
+            const vramTotal = stats.vram_total_gb || 0;
+            const vramPercent = stats.vram_percent || 0;
+            document.getElementById('vramUsage').textContent = `${vramUsed.toFixed(1)} / ${vramTotal.toFixed(1)} GB`;
+            const vramBar = document.getElementById('vramBar');
+            vramBar.style.width = `${vramPercent}%`;
+            vramBar.className = vramPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+
+            // CPU Utilization
+            const cpuPercent = stats.cpu_percent || 0;
+            document.getElementById('cpuUtil').textContent = `${cpuPercent.toFixed(1)}%`;
+            const cpuBar = document.getElementById('cpuBar');
+            cpuBar.style.width = `${cpuPercent}%`;
+            cpuBar.className = cpuPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+
+            // RAM Usage
+            const ramUsed = stats.ram_used_gb || 0;
+            const ramTotal = stats.ram_total_gb || 0;
+            const ramPercent = stats.ram_percent || 0;
+            document.getElementById('ramUsage').textContent = `${ramUsed.toFixed(1)} / ${ramTotal.toFixed(1)} GB`;
+            const ramBar = document.getElementById('ramBar');
+            ramBar.style.width = `${ramPercent}%`;
+            ramBar.className = ramPercent > 80 ? 'stat-bar-fill high' : 'stat-bar-fill';
+
+            // Update sparklines
+            if (stats.history) {
+                const gpuCanvas = document.getElementById('gpuUtilSparkline');
+                const vramCanvas = document.getElementById('vramSparkline');
+                const cpuCanvas = document.getElementById('cpuSparkline');
+                const ramCanvas = document.getElementById('ramSparkline');
+
+                // Set canvas size to match display size
+                gpuCanvas.width = gpuCanvas.offsetWidth;
+                gpuCanvas.height = gpuCanvas.offsetHeight;
+                vramCanvas.width = vramCanvas.offsetWidth;
+                vramCanvas.height = vramCanvas.offsetHeight;
+                cpuCanvas.width = cpuCanvas.offsetWidth;
+                cpuCanvas.height = cpuCanvas.offsetHeight;
+                ramCanvas.width = ramCanvas.offsetWidth;
+                ramCanvas.height = ramCanvas.offsetHeight;
+
+                drawSparkline(gpuCanvas, stats.history.gpu_util, '#4CAF50');
+                drawSparkline(vramCanvas, stats.history.vram_used, '#2196F3');
+                drawSparkline(cpuCanvas, stats.history.cpu_util, '#FF9800');
+                drawSparkline(ramCanvas, stats.history.ram_used, '#9C27B0');
+            }
+        }
+
+        // Handle preset selection
+        promptPreset.addEventListener('change', (e) => {
+            if (e.target.value) {
+                promptText.value = e.target.value;
+            }
+        });
+
+        // Handle prompt update
+        updatePromptBtn.addEventListener('click', () => {
+            const newPrompt = promptText.value.trim();
+            if (!newPrompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.send(JSON.stringify({
+                    type: 'update_prompt',
+                    prompt: newPrompt
+                }));
+                updateStatus('Prompt configured', 'connected');
+
+                // Visual feedback
+                updatePromptBtn.textContent = '✓ Configured!';
+                setTimeout(() => {
+                    updatePromptBtn.textContent = 'Update Prompt';
+                }, 2000);
+            } else {
+                updateStatus('Waiting for connection...', 'connecting');
+                // Visual feedback
+                updatePromptBtn.textContent = '⏳ Pending...';
+                setTimeout(() => {
+                    updatePromptBtn.textContent = 'Update Prompt';
+                }, 2000);
+            }
+        });
+
+        // Connect to WebSocket for text updates
+        function connectWebSocket() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                console.log('WebSocket already connected');
+                return;
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+            websocket = new WebSocket(wsUrl);
+
+            websocket.onopen = () => {
+                console.log('WebSocket connected');
+                updateStatus('Connected to server', 'connected');
+            };
+
+            websocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'vlm_response') {
+                    // Check if text changed (new generation)
+                    if (data.text !== lastText && lastText !== '') {
+                        // Remove fade to show fresh text
+                        textOverlay.classList.remove('fade');
+
+                        // Clear existing fade timeout
+                        if (fadeTimeout) {
+                            clearTimeout(fadeTimeout);
+                        }
+
+                        // Start fade after 2 seconds
+                        fadeTimeout = setTimeout(() => {
+                            textOverlay.classList.add('fade');
+                        }, 2000);
+                    }
+
+                    // Update text
+                    vlmText.textContent = data.text;
+                    lastText = data.text;
+
+                    // Update metrics
+                    if (data.metrics) {
+                        metricsDiv.style.display = 'block';
+                        latencyValue.textContent = Math.round(data.metrics.last_latency_ms);
+                        avgLatencyValue.textContent = Math.round(data.metrics.avg_latency_ms);
+                        countValue.textContent = data.metrics.total_inferences;
+                    }
+                } else if (data.type === 'gpu_stats') {
+                    // Update GPU stats
+                    updateGPUStats(data.stats);
+                } else if (data.type === 'status') {
+                    vlmText.textContent = data.text;
+                }
+            };
+
+            websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            websocket.onclose = () => {
+                console.log('WebSocket disconnected, will auto-reconnect...');
+                websocket = null;
+                // Auto-reconnect after 2 seconds (keeps GPU stats persistent)
+                setTimeout(connectWebSocket, 2000);
+            };
+        }
+
+        // Disconnect WebSocket
+        function disconnectWebSocket() {
+            if (websocket) {
+                websocket.close();
+                websocket = null;
+            }
+        }
+
+        // Start WebRTC connection
+        async function start() {
+            try {
+                // Connect WebSocket for text updates
+                connectWebSocket();
+
+                updateStatus('Requesting camera access...', 'connecting');
+
+                // Get local video stream
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+
+                updateStatus('Connecting to server...', 'connecting');
+
+                // Create peer connection
+                peerConnection = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                // Add local stream to peer connection
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // Handle incoming stream
+                peerConnection.ontrack = (event) => {
+                    console.log('Received remote track');
+                    if (event.streams && event.streams[0]) {
+                        videoElement.srcObject = event.streams[0];
+                    }
+                };
+
+                // Handle connection state changes
+                peerConnection.onconnectionstatechange = () => {
+                    console.log('Connection state:', peerConnection.connectionState);
+
+                    switch(peerConnection.connectionState) {
+                        case 'connected':
+                            updateStatus('Connected - AI is analyzing your video!', 'connected');
+                            break;
+                        case 'disconnected':
+                        case 'failed':
+                        case 'closed':
+                            updateStatus('Connection lost', 'disconnected');
+                            stop();
+                            break;
+                    }
+                };
+
+                // Handle ICE candidates
+                peerConnection.onicecandidate = (event) => {
+                    // ICE candidates are logged automatically by browser devtools if needed
+                    // Uncomment the line below if you want to see them in console:
+                    // if (event.candidate) console.log('ICE candidate:', event.candidate);
+                };
+
+                // Create and send offer
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                // Send offer to server
+                const response = await fetch('/offer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sdp: peerConnection.localDescription.sdp,
+                        type: peerConnection.localDescription.type
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to establish connection with server');
+                }
+
+                const answer = await response.json();
+
+                // Set remote description
+                await peerConnection.setRemoteDescription(
+                    new RTCSessionDescription(answer)
+                );
+
+                // Update UI
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+            } catch (error) {
+                console.error('Error starting connection:', error);
+                updateStatus(`Error: ${error.message}`, 'disconnected');
+                stop();
+            }
+        }
+
+        // Stop WebRTC connection
+        function stop() {
+            // Keep WebSocket connected for GPU stats
+            // disconnectWebSocket();
+
+            // Clear fade timeout
+            if (fadeTimeout) {
+                clearTimeout(fadeTimeout);
+                fadeTimeout = null;
+            }
+
+            // Stop local stream
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            // Close peer connection
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+
+            // Clear video
+            videoElement.srcObject = null;
+
+            // Update UI
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            updateStatus('Stopped', 'disconnected');
+
+            // Reset text overlay
+            vlmText.textContent = 'Click "Start VLM Analysis" to begin';
+            textOverlay.classList.remove('fade');
+            lastText = '';
+
+            // Keep metrics visible (cumulative stats remain)
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', start);
+        stopBtn.addEventListener('click', stop);
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', stop);
+    </script>
+</body>
+</html>
+

@@ -21,6 +21,8 @@ class VideoProcessorTrack(VideoStreamTrack):
     Video track that receives frames, sends them to VLM for analysis,
     and overlays responses on the video before sending back
     """
+    # Class variable for frame processing interval (can be updated dynamically)
+    process_every_n_frames = 30
 
     def __init__(self, track: VideoStreamTrack, vlm_service: VLMService, text_callback=None):
         super().__init__()
@@ -29,7 +31,6 @@ class VideoProcessorTrack(VideoStreamTrack):
         self.text_callback = text_callback  # Callback to send text updates
         self.last_frame: Optional[np.ndarray] = None
         self.frame_count = 0
-        self.process_every_n_frames = 30  # Process every N frames to avoid overloading VLM
 
     async def recv(self):
         """
@@ -52,12 +53,14 @@ class VideoProcessorTrack(VideoStreamTrack):
 
             # Send frame to VLM for analysis (async, non-blocking)
             # Only process every Nth frame to avoid overwhelming the VLM
-            if self.frame_count % self.process_every_n_frames == 0:
+            # Use class variable so it can be updated dynamically
+            interval = self.__class__.process_every_n_frames
+            if self.frame_count % interval == 0:
                 # Convert to PIL Image for VLM
                 pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
                 # Fire and forget - don't wait for result
                 asyncio.create_task(self.vlm_service.process_frame(pil_img))
-                logger.debug(f"Sent frame {self.frame_count} to VLM")
+                logger.info(f"Frame {self.frame_count}: Sending to VLM (interval={interval})")
 
             # Get current response (may be old if VLM is still processing)
             response, is_processing = self.vlm_service.get_current_response()

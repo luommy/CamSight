@@ -100,14 +100,16 @@ async def websocket_handler(request):
 
                     if data.get('type') == 'update_prompt':
                         new_prompt = data.get('prompt', '').strip()
+                        max_tokens = data.get('max_tokens')
                         if new_prompt and vlm_service:
-                            vlm_service.update_prompt(new_prompt)
-                            logger.info(f"Prompt updated: {new_prompt}")
+                            vlm_service.update_prompt(new_prompt, max_tokens)
+                            logger.info(f"Prompt updated: {new_prompt}, max_tokens: {max_tokens}")
 
                             # Confirm to client
                             await ws.send_json({
                                 "type": "prompt_updated",
-                                "prompt": new_prompt
+                                "prompt": new_prompt,
+                                "max_tokens": max_tokens
                             })
 
                     elif data.get('type') == 'update_model':
@@ -121,6 +123,26 @@ async def websocket_handler(request):
                                 "type": "model_updated",
                                 "model": new_model
                             })
+
+                    elif data.get('type') == 'update_processing':
+                        process_every = data.get('process_every', 30)
+                        try:
+                            process_every = int(process_every)
+                            if 1 <= process_every <= 3600:  # Up to 3600 frames (2 minutes @ 30fps)
+                                from video_processor import VideoProcessorTrack
+                                old_value = VideoProcessorTrack.process_every_n_frames
+                                VideoProcessorTrack.process_every_n_frames = process_every
+                                logger.info(f"Processing interval updated: {old_value} → {process_every} frames")
+
+                                # Confirm to client
+                                await ws.send_json({
+                                    "type": "processing_updated",
+                                    "process_every": process_every
+                                })
+                            else:
+                                logger.warning(f"Processing interval out of range (1-3600): {process_every}")
+                        except ValueError:
+                            logger.error(f"Invalid processing interval: {process_every}")
                 except json.JSONDecodeError:
                     logger.error("Invalid JSON from client")
                 except Exception as e:
