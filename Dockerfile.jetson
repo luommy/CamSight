@@ -1,4 +1,7 @@
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+# Dockerfile for NVIDIA Jetson (Orin, Thor)
+# Based on L4T (Linux for Tegra) instead of CUDA runtime
+
+FROM nvcr.io/nvidia/l4t-base:36.4.0
 
 # Install Python and system dependencies
 RUN apt-get update && apt-get install -y \
@@ -31,6 +34,8 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
+# Note: jetson-stats (jtop) may not work properly in Docker
+# The app will fall back to sysfs monitoring (/sys/devices/platform/...)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files

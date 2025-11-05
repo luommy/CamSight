@@ -279,20 +279,70 @@ docker-compose logs -f live-vlm-webui
 docker-compose down
 ```
 
-**For NVIDIA GPU support**, uncomment the GPU section in `docker-compose.yml`:
-```yaml
-deploy:
-  resources:
-    reservations:
-      devices:
-        - driver: nvidia
-          count: 1
-          capabilities: [gpu]
-```
+**For NVIDIA GPU support**, you need to:
+
+1. **Install NVIDIA Container Toolkit** (one-time setup):
+   ```bash
+   # Ubuntu/Debian
+   distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+   curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+     sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+   sudo apt-get update
+   sudo apt-get install -y nvidia-container-toolkit
+
+   # Configure Docker to use NVIDIA runtime
+   sudo nvidia-ctk runtime configure --runtime=docker
+   sudo systemctl restart docker
+
+   # Verify GPU access works
+   docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
+   ```
+
+   > **Note:** If `--gpus all` doesn't work, you may need to enable CDI:
+   > ```bash
+   > sudo mkdir -p /etc/cdi
+   > sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+   > sudo nvidia-ctk runtime configure --runtime=docker --cdi.enabled
+   > sudo systemctl restart docker
+   > # Then use: --device nvidia.com/gpu=all instead of --gpus all
+   > ```
+
+2. **Enable GPU in docker-compose.yml** (uncomment GPU sections):
+   ```yaml
+   # For live-vlm-webui service (enables GPU monitoring in system stats)
+   live-vlm-webui:
+     deploy:
+       resources:
+         reservations:
+           devices:
+             - driver: nvidia
+               count: 1
+               capabilities: [gpu, utility]
+
+   # For ollama service (enables model inference on GPU)
+   ollama:
+     deploy:
+       resources:
+         reservations:
+           devices:
+             - driver: nvidia
+               count: 1
+               capabilities: [gpu]
+   ```
+
+3. **Restart the stack**:
+   ```bash
+   docker-compose down
+   docker-compose up -d
+   ```
 
 **Access the UI:**
 - Open `https://localhost:8090` in your browser
 - Accept the self-signed certificate warning
+- System info should now show your actual GPU name!
 
 ### Option 2: Standalone Docker Container
 
@@ -302,33 +352,89 @@ If you already have a VLM backend running (Ollama, vLLM, etc.):
 # Build the image
 docker build -t live-vlm-webui .
 
-# Run the container
+# OPTION A: Connect to LOCAL services (Ollama/vLLM on the same host)
+# Use --network host so container can access localhost services
 docker run -d \
   --name live-vlm-webui \
-  -p 8090:8090 \
   --network host \
   live-vlm-webui
 
-# Or with custom VLM endpoint
+# OPTION A with GPU monitoring (shows GPU name in system stats)
+docker run -d \
+  --name live-vlm-webui \
+  --network host \
+  --gpus all \
+  live-vlm-webui
+
+# The app will auto-detect Ollama on localhost:11434
+# Access at: https://localhost:8090
+
+# OPTION B: Connect to REMOTE VLM server or NVIDIA API Catalog
+# Use -p port mapping when NOT using host network
 docker run -d \
   --name live-vlm-webui \
   -p 8090:8090 \
+  --gpus all \
   -e VLM_API_BASE=http://your-vlm-server:8000/v1 \
   -e VLM_MODEL=llama-3.2-11b-vision-instruct \
   live-vlm-webui
 ```
 
-### Option 3: Pre-built Image from GitHub Container Registry
+> **Important: Networking Explained**
+> - **Use `--network host`** when connecting to services on the **same host** (e.g., Ollama on `localhost:11434`)
+>   - With host network, the container shares your host's network stack
+>   - Access the app directly at `https://localhost:8090`
+>   - Port mapping (`-p`) is NOT needed with `--network host`
+> - **Use `-p 8090:8090`** when connecting to **remote** services or cloud APIs
+>   - This is standard Docker port mapping for isolated network
+>
+> **GPU Access:**
+> - Add `--gpus all` to enable GPU monitoring (shows GPU name, utilization, VRAM)
+> - Requires NVIDIA Container Toolkit installed (see above)
+> - If `--gpus all` doesn't work, try `--device nvidia.com/gpu=all` (CDI format)
+> - Without GPU access, system stats will show "N/A" for GPU name
 
-**Coming soon** - we'll publish pre-built images for quick deployment:
+### Option 3: Pre-built Images from GitHub Container Registry
 
+We provide **platform-specific pre-built images**:
+
+#### For x86_64 PC/Workstation:
 ```bash
-# Pull and run (when available)
+# Pull the latest x86 image
+docker pull ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-x86
+
+# Run with local Ollama and GPU monitoring
 docker run -d \
   --name live-vlm-webui \
-  -p 8090:8090 \
-  ghcr.io/nvidia-ai-iot/live-vlm-webui:latest
+  --network host \
+  --gpus all \
+  ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-x86
+
+# Or specify a version
+docker pull ghcr.io/nvidia-ai-iot/live-vlm-webui:v1.0.0-x86
 ```
+
+#### For NVIDIA Jetson (Orin, Thor):
+```bash
+# Pull the latest Jetson image
+docker pull ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-jetson
+
+# Run with local Ollama and GPU monitoring
+docker run -d \
+  --name live-vlm-webui \
+  --network host \
+  --runtime nvidia \
+  ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-jetson
+
+# Or specify a version
+docker pull ghcr.io/nvidia-ai-iot/live-vlm-webui:v1.0.0-jetson
+```
+
+**Image Tags:**
+- `:latest-x86` - Latest x86_64 build (CUDA runtime, NVML support)
+- `:latest-jetson` - Latest ARM64 Jetson build (L4T base, jtop/sysfs support)
+- `:v1.0.0-x86` - Version-tagged x86_64 release
+- `:v1.0.0-jetson` - Version-tagged Jetson release
 
 ### Custom SSL Certificates (Production)
 
@@ -351,6 +457,84 @@ volumes:
   - ./your-cert.pem:/app/cert.pem:ro
   - ./your-key.pem:/app/key.pem:ro
 ```
+
+### Docker Image Details
+
+We provide **platform-specific Dockerfiles** for optimal compatibility:
+
+#### `Dockerfile` - For x86_64 PC/Workstation
+**Base Image:** `nvidia/cuda:12.4.1-runtime-ubuntu22.04`
+- Includes NVIDIA CUDA runtime libraries for GPU monitoring via NVML
+- Enables `pynvml` to query GPU name, utilization, VRAM, temperature, and power
+- Compatible with NVIDIA drivers 545+ (GeForce, Quadro, Tesla, etc.)
+- Image size: ~1.5GB (compressed)
+
+**Build:**
+```bash
+docker build -t live-vlm-webui:x86 .
+```
+
+#### `Dockerfile.jetson` - For NVIDIA Jetson (Orin, Thor)
+**Base Image:** `nvcr.io/nvidia/l4t-base:36.4.0` (Linux for Tegra)
+- Optimized for Jetson platform with L4T drivers
+- Uses `jtop` (jetson-stats) or sysfs for GPU monitoring
+- Supports Jetson Orin and Jetson Thor
+- Image size: ~1.2GB (compressed)
+
+**Build:**
+```bash
+docker build -f Dockerfile.jetson -t live-vlm-webui:jetson .
+```
+
+**Why separate Dockerfiles?**
+- Jetson uses different GPU drivers (L4T) than desktop GPUs
+- Jetson monitoring requires `jtop` or sysfs access, not NVML
+- L4T base image is smaller and optimized for ARM64 Jetson
+
+**Without GPU access** (`--gpus all` or `--device nvidia.com/gpu=all`), the app still works but system stats show "N/A" for GPU info.
+
+### Building Platform-Specific Images (For Developers)
+
+If you want to build and publish your own images:
+
+**1. Authenticate with GitHub Container Registry:**
+```bash
+# Create a Personal Access Token with 'write:packages' scope at https://github.com/settings/tokens
+echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+```
+
+**2. Build and push x86_64 image:**
+```bash
+# Build locally
+docker build -t live-vlm-webui:x86 .
+
+# Tag for GHCR
+docker tag live-vlm-webui:x86 ghcr.io/YOUR_USERNAME/live-vlm-webui:latest-x86
+docker tag live-vlm-webui:x86 ghcr.io/YOUR_USERNAME/live-vlm-webui:v1.0.0-x86
+
+# Push
+docker push ghcr.io/YOUR_USERNAME/live-vlm-webui:latest-x86
+docker push ghcr.io/YOUR_USERNAME/live-vlm-webui:v1.0.0-x86
+```
+
+**3. Build and push Jetson image (ARM64):**
+```bash
+# On Jetson device or using QEMU
+docker build -f Dockerfile.jetson -t live-vlm-webui:jetson .
+
+# Tag for GHCR
+docker tag live-vlm-webui:jetson ghcr.io/YOUR_USERNAME/live-vlm-webui:latest-jetson
+docker tag live-vlm-webui:jetson ghcr.io/YOUR_USERNAME/live-vlm-webui:v1.0.0-jetson
+
+# Push
+docker push ghcr.io/YOUR_USERNAME/live-vlm-webui:latest-jetson
+docker push ghcr.io/YOUR_USERNAME/live-vlm-webui:v1.0.0-jetson
+```
+
+**4. Or use GitHub Actions** (recommended):
+- Push to `main` branch → Automatically builds both x86 and Jetson images
+- Create a git tag like `v1.0.0` → Builds versioned releases
+- See `.github/workflows/docker-publish.yml` for the workflow
 
 ### Environment Variables
 

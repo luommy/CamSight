@@ -29,6 +29,15 @@ services:
       - ollama
     networks:
       - vlm-network
+    # Uncomment for GPU monitoring support (NVIDIA)
+    # Allows the container to see GPU info for system stats display
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu, utility]
 
   # Ollama (optional - comment out if using external VLM)
   ollama:

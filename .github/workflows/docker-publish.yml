@@ -1,0 +1,115 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-x86:
+    name: Build x86_64 Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for x86
+        id: meta-x86
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch,suffix=-x86
+            type=ref,event=pr,suffix=-x86
+            type=semver,pattern={{version}},suffix=-x86
+            type=semver,pattern={{major}}.{{minor}},suffix=-x86
+            type=raw,value=latest-x86,enable={{is_default_branch}}
+
+      - name: Build and push x86_64 image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-x86.outputs.tags }}
+          labels: ${{ steps.meta-x86.outputs.labels }}
+          cache-from: type=gha,scope=x86
+          cache-to: type=gha,mode=max,scope=x86
+
+  build-jetson:
+    name: Build Jetson ARM64 Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Jetson
+        id: meta-jetson
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch,suffix=-jetson
+            type=ref,event=pr,suffix=-jetson
+            type=semver,pattern={{version}},suffix=-jetson
+            type=semver,pattern={{major}}.{{minor}},suffix=-jetson
+            type=raw,value=latest-jetson,enable={{is_default_branch}}
+
+      - name: Build and push Jetson ARM64 image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.jetson
+          platforms: linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-jetson.outputs.tags }}
+          labels: ${{ steps.meta-jetson.outputs.labels }}
+          cache-from: type=gha,scope=jetson
+          cache-to: type=gha,mode=max,scope=jetson
+
