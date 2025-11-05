@@ -436,7 +436,10 @@ async def gpu_monitor_loop():
             # Get current stats
             stats = gpu_monitor.get_stats()
 
-            # Add history
+            # Update history with current stats
+            gpu_monitor.update_history(stats)
+
+            # Add history to stats
             stats["history"] = gpu_monitor.get_history()
 
             # Broadcast to all connected clients
