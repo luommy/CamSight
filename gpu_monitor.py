@@ -565,7 +565,7 @@ class AppleSiliconMonitor(GPUMonitor):
                         self.product_name = line.split(':')[1].strip()
                     elif 'Model Identifier:' in line:
                         model_id = line.split(':')[1].strip()
-                
+
                 # Try to get screen size from display info
                 if self.product_name and 'MacBook' in self.product_name:
                     try:
