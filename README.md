@@ -115,9 +115,61 @@ The VLM processes frames asynchronously in the background. The video stream cont
 
 ## 🐋 Docker Deployment (Advanced)
 
+### Docker Compose (Complete Stack)
+
+The easiest way to run a complete VLM stack with both the WebUI and a VLM backend:
+
+**With Ollama (Default - Easiest):**
+```bash
+# PC (x86_64)
+docker compose --profile live-vlm-webui-x86 up
+
+# Jetson Orin
+docker compose --profile live-vlm-webui-jetson-orin up
+
+# Jetson Thor
+docker compose --profile live-vlm-webui-jetson-thor up
+
+# After starting, pull a vision model:
+docker exec ollama ollama pull llama3.2-vision:11b
+```
+
+The default `docker-compose.yml` includes:
+- ✅ **Ollama** for easy model management
+- ✅ **Live VLM WebUI** for real-time interaction
+- ✅ Automatic platform detection via profiles
+- ✅ GPU configuration for all platforms
+- ✅ No API keys required
+
+**With NVIDIA NIM + Cosmos-Reason1-7B (Advanced):**
+```bash
+# First, set your NGC API Key (get from https://org.ngc.nvidia.com/setup/api-key)
+export NGC_API_KEY=<your-key>
+
+# PC (x86_64)
+docker compose -f docker-compose.cosmos-reason1.yml --profile live-vlm-webui-x86 up
+
+# Jetson Orin
+docker compose -f docker-compose.cosmos-reason1.yml --profile live-vlm-webui-jetson-orin up
+
+# Jetson Thor
+docker compose -f docker-compose.cosmos-reason1.yml --profile live-vlm-webui-jetson-thor up
+```
+
+The `docker-compose.cosmos-reason1.yml` provides:
+- ✅ **NVIDIA NIM** serving Cosmos-Reason1-7B with reasoning capabilities ([docs](https://docs.nvidia.com/nim/vision-language-models/1.4.1/examples/cosmos-reason1/api.html))
+- ✅ Production-grade inference
+- ✅ Advanced VLM with planning and anomaly detection
+
+> **Note:** NIM requires an NGC API Key and downloads ~10-15GB on first run.
+
+See the files for full configuration options and customization.
+
+---
+
 ### Manual Docker Run
 
-If you prefer manual control over the Docker container:
+If you prefer manual control over individual containers:
 
 **PC (x86_64):**
 ```bash

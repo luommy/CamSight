@@ -1,45 +1,33 @@
 version: '3.8'
 
+# ==============================================================================
+# Live VLM WebUI + Ollama
+# ==============================================================================
+# This is a simpler alternative to vLLM, great for quick testing and demos.
+# Ollama provides an easy-to-use interface for running vision models locally.
+#
+# Usage:
+#   # PC (x86_64)
+#   docker compose -f docker-compose.ollama.yml --profile live-vlm-webui-x86 up
+#
+#   # Jetson Orin
+#   docker compose -f docker-compose.ollama.yml --profile live-vlm-webui-jetson-orin up
+#
+#   # Jetson Thor
+#   docker compose -f docker-compose.ollama.yml --profile live-vlm-webui-jetson-thor up
+#
+# After starting, pull a vision model:
+#   docker exec ollama ollama pull llama3.2-vision:11b
+#
+# Access:
+#   - Live VLM WebUI: https://localhost:8090
+#   - Ollama API: http://localhost:11434/v1
+# ==============================================================================
+
 services:
-  # Live VLM WebUI
-  live-vlm-webui:
-    build: .
-    container_name: live-vlm-webui
-    ports:
-      - "8090:8090"
-    volumes:
-      # Optional: Mount custom SSL certificates
-      # - ./cert.pem:/app/cert.pem:ro
-      # - ./key.pem:/app/key.pem:ro
-
-      # Optional: Mount for development (hot reload)
-      # - ./server.py:/app/server.py:ro
-      # - ./vlm_service.py:/app/vlm_service.py:ro
-      # - ./video_processor.py:/app/video_processor.py:ro
-      # - ./gpu_monitor.py:/app/gpu_monitor.py:ro
-      # - ./index.html:/app/index.html:ro
-    environment:
-      # Auto-detection will find local services, or you can override:
-      # - VLM_API_BASE=http://ollama:11434/v1
-      # - VLM_MODEL=llama3.2-vision:11b
-      # - VLM_PROMPT=Describe what you see in this image in detail.
-      - PYTHONUNBUFFERED=1
-    restart: unless-stopped
-    depends_on:
-      - ollama
-    networks:
-      - vlm-network
-    # Uncomment for GPU monitoring support (NVIDIA)
-    # Allows the container to see GPU info for system stats display
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu, utility]
-
-  # Ollama (optional - comment out if using external VLM)
+  # ============================================================================
+  # Ollama Service
+  # ============================================================================
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -50,14 +38,87 @@ services:
     restart: unless-stopped
     networks:
       - vlm-network
-    # Uncomment for GPU support (NVIDIA)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # Live VLM WebUI - PC (x86_64)
+  # ============================================================================
+  live-vlm-webui-x86:
+    image: ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-x86
+    container_name: live-vlm-webui
+    profiles:
+      - live-vlm-webui-x86
+    network_mode: host
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility]
+
+  # ============================================================================
+  # Live VLM WebUI - Jetson Orin
+  # ============================================================================
+  live-vlm-webui-jetson-orin:
+    image: ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-jetson-orin
+    container_name: live-vlm-webui
+    profiles:
+      - live-vlm-webui-jetson-orin
+    network_mode: host
+    privileged: true
+    volumes:
+      - /run/jtop.sock:/run/jtop.sock:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    runtime: nvidia
+
+  # ============================================================================
+  # Live VLM WebUI - Jetson Thor
+  # ============================================================================
+  live-vlm-webui-jetson-thor:
+    image: ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-jetson-thor
+    container_name: live-vlm-webui
+    profiles:
+      - live-vlm-webui-jetson-thor
+    network_mode: host
+    privileged: true
+    volumes:
+      - /run/jtop.sock:/run/jtop.sock:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility]
 
 volumes:
   ollama-data:
@@ -66,4 +127,21 @@ volumes:
 networks:
   vlm-network:
     driver: bridge
+
+# ==============================================================================
+# Quick Start:
+# ==============================================================================
+# 1. Start services:
+#    docker compose -f docker-compose.ollama.yml --profile live-vlm-webui-x86 up -d
+#
+# 2. Pull a vision model:
+#    docker exec ollama ollama pull llama3.2-vision:11b
+#    # or
+#    docker exec ollama ollama pull llava:7b
+#
+# 3. Access Web UI:
+#    https://localhost:8090
+#
+# 4. Select model in UI and start camera!
+# ==============================================================================
 

@@ -1,0 +1,196 @@
+version: '3.8'
+
+# ==============================================================================
+# Live VLM WebUI + NVIDIA NIM Cosmos-Reason1
+# ==============================================================================
+# This docker-compose file demonstrates a complete VLM inference stack:
+#   - NVIDIA NIM serving Cosmos-Reason1-7B vision-language model
+#   - Live VLM WebUI for real-time webcam interaction
+#
+# Platform Support:
+#   - PC (x86_64): Use 'live-vlm-webui-x86' profile
+#   - Jetson Orin: Use 'live-vlm-webui-jetson-orin' profile
+#   - Jetson Thor: Use 'live-vlm-webui-jetson-thor' profile
+#
+# Usage:
+#   # PC (x86_64)
+#   docker compose --profile live-vlm-webui-x86 up
+#
+#   # Jetson Orin
+#   docker compose --profile live-vlm-webui-jetson-orin up
+#
+#   # Jetson Thor
+#   docker compose --profile live-vlm-webui-jetson-thor up
+#
+# Access:
+#   - Live VLM WebUI: https://localhost:8090
+#   - NVIDIA NIM API: http://localhost:8000/v1
+#
+# Requirements:
+#   - NGC API Key: Get from https://org.ngc.nvidia.com/setup/api-key
+#   - Set in environment: export NGC_API_KEY=<your-key>
+# ==============================================================================
+
+services:
+  # ============================================================================
+  # NVIDIA NIM - Cosmos-Reason1 7B
+  # ============================================================================
+  # Official NVIDIA NIM container for Cosmos-Reason1-7B vision-language model
+  # Docs: https://docs.nvidia.com/nim/vision-language-models/1.4.1/examples/cosmos-reason1/api.html
+  nim-cosmos-reason1:
+    image: nvcr.io/nim/nvidia/cosmos-reason1-7b:1.4.1
+    container_name: nim-cosmos-reason1-7b
+    ports:
+      - "8000:8000"
+    volumes:
+      # Cache downloaded NIM models locally
+      - ${HOME}/.cache/nim:/opt/nim/.cache
+    environment:
+      # Required: NGC API Key (get from https://org.ngc.nvidia.com/setup/api-key)
+      - NGC_API_KEY=${NGC_API_KEY}
+    shm_size: 32gb
+    restart: unless-stopped
+    networks:
+      - vlm-network
+    # GPU configuration
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s  # NIM takes time to start
+
+  # ============================================================================
+  # Live VLM WebUI - PC (x86_64)
+  # ============================================================================
+  live-vlm-webui-x86:
+    image: ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-x86
+    container_name: live-vlm-webui
+    profiles:
+      - live-vlm-webui-x86
+    network_mode: host  # Required for WebRTC
+    command: >
+      python server.py
+      --host 0.0.0.0
+      --port 8090
+      --ssl-cert cert.pem
+      --ssl-key key.pem
+      --api-base http://localhost:8000/v1
+      --model nvidia/cosmos-reason1-7b
+      --prompt "Describe what you see in this image in one sentence."
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    depends_on:
+      nim-cosmos-reason1:
+        condition: service_healthy
+    # GPU configuration for x86 (uses --gpus all)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility]
+
+  # ============================================================================
+  # Live VLM WebUI - Jetson Orin
+  # ============================================================================
+  live-vlm-webui-jetson-orin:
+    image: ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-jetson-orin
+    container_name: live-vlm-webui
+    profiles:
+      - live-vlm-webui-jetson-orin
+    network_mode: host  # Required for WebRTC
+    privileged: true  # Required for jtop GPU monitoring
+    command: >
+      python server.py
+      --host 0.0.0.0
+      --port 8090
+      --ssl-cert cert.pem
+      --ssl-key key.pem
+      --api-base http://localhost:8000/v1
+      --model nvidia/cosmos-reason1-7b
+      --prompt "Describe what you see in this image in one sentence."
+    volumes:
+      # Mount jtop socket for GPU stats
+      - /run/jtop.sock:/run/jtop.sock:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    depends_on:
+      nim-cosmos-reason1:
+        condition: service_healthy
+    # Jetson Orin uses runtime: nvidia (not deploy section)
+    runtime: nvidia
+
+  # ============================================================================
+  # Live VLM WebUI - Jetson Thor
+  # ============================================================================
+  live-vlm-webui-jetson-thor:
+    image: ghcr.io/nvidia-ai-iot/live-vlm-webui:latest-jetson-thor
+    container_name: live-vlm-webui
+    profiles:
+      - live-vlm-webui-jetson-thor
+    network_mode: host  # Required for WebRTC
+    privileged: true  # Required for jtop GPU monitoring
+    command: >
+      python server.py
+      --host 0.0.0.0
+      --port 8090
+      --ssl-cert cert.pem
+      --ssl-key key.pem
+      --api-base http://localhost:8000/v1
+      --model nvidia/cosmos-reason1-7b
+      --prompt "Describe what you see in this image in one sentence."
+    volumes:
+      # Mount jtop socket for GPU stats
+      - /run/jtop.sock:/run/jtop.sock:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    depends_on:
+      nim-cosmos-reason1:
+        condition: service_healthy
+    # Jetson Thor uses --gpus all (SBSA-compliant)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility]
+
+networks:
+  vlm-network:
+    driver: bridge
+
+# ==============================================================================
+# Notes:
+# ==============================================================================
+# 1. NGC API Key: Required for NIM. Get yours at https://org.ngc.nvidia.com/setup/api-key
+#    Set it: export NGC_API_KEY=<your-key>
+# 2. Model Cache: NIM models cached in ${HOME}/.cache/nim (change if needed)
+# 3. First Run: NIM downloads the model on first start (~10-15GB, takes 5-10 min)
+# 4. Memory: Cosmos-Reason1-7B requires ~16GB VRAM
+# 5. Network: NIM uses bridge network, Live VLM WebUI uses host network for WebRTC
+# 6. Profiles: Use --profile to select your platform's WebUI variant
+#
+# Troubleshooting:
+# - If NIM fails to start, check NGC_API_KEY is set
+# - Check GPU memory: nvidia-smi
+# - Check NIM API: curl http://localhost:8000/v1/models
+# - View logs: docker compose logs -f nim-cosmos-reason1
+# - WebUI logs: docker compose logs -f live-vlm-webui
+#
+# Documentation:
+# - NIM API docs: https://docs.nvidia.com/nim/vision-language-models/1.4.1/
+# ==============================================================================
