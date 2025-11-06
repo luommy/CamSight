@@ -40,11 +40,13 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Note: --break-system-packages is safe in Docker (isolated environment)
+# Ubuntu 24.04 / Python 3.12 has PEP 668 enabled by default
+RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
 
 # Install jetson-stats from GitHub (latest version for Thor support)
 # PyPI version may not have full Thor support yet
-RUN pip install --no-cache-dir git+https://github.com/rbonghi/jetson_stats.git
+RUN pip install --no-cache-dir --break-system-packages git+https://github.com/rbonghi/jetson_stats.git
 
 # Copy application files
 COPY server.py .
