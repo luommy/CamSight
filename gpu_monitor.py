@@ -167,6 +167,23 @@ class NVMLMonitor(GPUMonitor):
         self.error_logged = False  # Track if we've already logged an error
         self.consecutive_errors = 0  # Count consecutive errors
 
+        # Detect DGX Spark
+        self.product_name = ""
+        self.dgx_version = ""
+        try:
+            with open('/etc/dgx-release', 'r') as f:
+                for line in f:
+                    if line.startswith('DGX_PRETTY_NAME='):
+                        self.product_name = line.split('=')[1].strip().strip('"')
+                    elif line.startswith('DGX_SWBUILD_VERSION='):
+                        self.dgx_version = line.split('=')[1].strip().strip('"')
+            if self.product_name:
+                logger.info(f"Detected {self.product_name} (Version {self.dgx_version})")
+        except FileNotFoundError:
+            pass  # Not a DGX system
+        except Exception as e:
+            logger.debug(f"Could not read DGX info: {e}")
+
         try:
             import pynvml
             pynvml.nvmlInit()
@@ -228,6 +245,7 @@ class NVMLMonitor(GPUMonitor):
                 "vram_percent": vram_percent,
                 "temp_c": temp,
                 "power_w": power_w,
+                "product_name": self.product_name,  # DGX Spark, etc.
                 **system_stats
             }
 
@@ -257,10 +275,12 @@ class NVMLMonitor(GPUMonitor):
         # Use GPU name if we got it during init, otherwise show unavailable
         gpu_name = getattr(self, 'device_name', 'N/A')
         platform_name = f"NVIDIA {gpu_name} (monitoring unavailable)" if gpu_name != "N/A" else "NVIDIA (NVML unavailable)"
+        product_name = getattr(self, 'product_name', '')
 
         return {
             "platform": platform_name,
             "gpu_name": gpu_name,
+            "product_name": product_name,
             "gpu_percent": 0,
             "vram_used_gb": 0,
             "vram_total_gb": 0,

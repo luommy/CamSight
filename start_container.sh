@@ -165,7 +165,7 @@ if [ "$PLATFORM" != "mac" ]; then
             echo -e "${YELLOW}⚠️  Failed to pull from registry, will try local image${NC}"
         }
     fi
-    
+
     # Check if image exists (registry or local)
     if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${IMAGE_NAME}$"; then
         # Try common local image names
@@ -182,7 +182,7 @@ if [ "$PLATFORM" != "mac" ]; then
                 LOCAL_IMAGE="live-vlm-webui:x86"
             fi
         fi
-        
+
         if [ -n "$LOCAL_IMAGE" ]; then
             echo -e "${GREEN}✅ Found local image: ${LOCAL_IMAGE}${NC}"
             IMAGE_NAME="${LOCAL_IMAGE}"

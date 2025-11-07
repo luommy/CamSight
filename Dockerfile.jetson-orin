@@ -48,6 +48,7 @@ COPY video_processor.py .
 COPY gpu_monitor.py .
 COPY index.html .
 COPY generate_cert.sh .
+COPY images/ ./images/
 
 # Make generate_cert.sh executable
 RUN chmod +x generate_cert.sh
