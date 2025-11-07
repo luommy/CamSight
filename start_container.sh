@@ -230,6 +230,11 @@ else
         DOCKER_CMD="$DOCKER_CMD $RUNTIME_FLAG"
     fi
 
+    # Add DGX Spark-specific mounts
+    if [ "$PLATFORM" = "arm64-sbsa" ] && [ -f /etc/dgx-release ]; then
+        DOCKER_CMD="$DOCKER_CMD -v /etc/dgx-release:/etc/dgx-release:ro"
+    fi
+
     # Add Jetson-specific mounts
     if [[ "$PLATFORM" == "jetson-"* ]]; then
         DOCKER_CMD="$DOCKER_CMD -v /run/jtop.sock:/run/jtop.sock:ro"
