@@ -221,8 +221,9 @@ class NVMLMonitor(GPUMonitor):
                 vram_used_gb = memory_info.used / (1024**3)
                 vram_total_gb = memory_info.total / (1024**3)
                 vram_percent = (memory_info.used / memory_info.total) * 100
-            except pynvml.NVMLError as e:
-                if 'Not Supported' in str(e):
+            except Exception as e:
+                # GB10/Blackwell and some newer GPUs don't support memory queries
+                if 'Not Supported' in str(e) or 'not supported' in str(e).lower():
                     if not self.vram_warning_logged:
                         logger.warning(f"VRAM monitoring not supported on {self.device_name} (GB10/Blackwell limitation)")
                         self.vram_warning_logged = True
