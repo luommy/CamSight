@@ -1073,12 +1073,16 @@
             stroke: rgb(13, 148, 136); /* Darker teal for light mode */
         }
 
-        /* Action button icons (refresh, play, stop) - NVIDIA Green */
+        /* Action button icons (play, stop) - White for contrast on green button */
         .btn-primary .lucide {
-            stroke: rgb(118, 185, 0);
+            stroke: white !important;
         }
         body.light-theme .btn-primary .lucide {
-            stroke: rgb(94, 148, 0); /* Darker green for light mode */
+            stroke: white !important;
+        }
+
+        .btn-secondary .lucide {
+            stroke: var(--text-primary) !important;
         }
 
         /* Input fields - Focus and Apply animations */
