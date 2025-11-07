@@ -2454,6 +2454,12 @@
                 // Line 2: GPU name
                 const gpuDisplayName = gpuName.includes('GPU') ? gpuName : `${gpuName} GPU`;
                 systemInfoElem.innerHTML = `<b>${boardName}</b> (<code>${hostname}</code>)<br>${gpuDisplayName}`;
+            } else if (productName && productName.includes('DGX')) {
+                // DGX: Two-line format
+                // Line 1: DGX Product name (hostname)
+                // Line 2: GPU name
+                const gpuDisplayName = gpuName.includes('GPU') ? gpuName : `${gpuName} GPU`;
+                systemInfoElem.innerHTML = `<b>${productName}</b> (<code>${hostname}</code>)<br>${gpuDisplayName}`;
             } else if (productName && productName.includes('Mac')) {
                 // Mac: Two-line format
                 // Line 1: Product name CPU (hostname)
@@ -2498,13 +2504,21 @@
             }
 
             // VRAM (Purple)
-            const vramUsed = stats.vram_used_gb || 0;
-            const vramTotal = stats.vram_total_gb || 0;
-            const vramPercent = stats.vram_percent || 0;
-            document.getElementById('vramUsage').textContent = `${vramUsed.toFixed(1)}/${vramTotal.toFixed(1)} GB`;
-            const vramBar = document.getElementById('vramBar');
-            vramBar.style.width = `${vramPercent}%`;
-            vramBar.style.background = '#9C27B0';  // Purple
+            const vramUsed = stats.vram_used_gb;
+            const vramTotal = stats.vram_total_gb;
+            const vramPercent = stats.vram_percent;
+            if (vramUsed === null || vramUsed === undefined || vramTotal === null || vramTotal === undefined) {
+                // VRAM unavailable (e.g., GB10/Blackwell GPUs)
+                document.getElementById('vramUsage').textContent = 'N/A';
+                const vramBar = document.getElementById('vramBar');
+                vramBar.style.width = '0%';
+                vramBar.style.background = '#666';  // Gray for unavailable
+            } else {
+                document.getElementById('vramUsage').textContent = `${vramUsed.toFixed(1)}/${vramTotal.toFixed(1)} GB`;
+                const vramBar = document.getElementById('vramBar');
+                vramBar.style.width = `${vramPercent}%`;
+                vramBar.style.background = '#9C27B0';  // Purple
+            }
 
             // CPU (Blue)
             const cpuPercent = stats.cpu_percent || 0;

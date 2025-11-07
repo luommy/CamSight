@@ -170,6 +170,7 @@ class NVMLMonitor(GPUMonitor):
         # Detect DGX Spark
         self.product_name = ""
         self.dgx_version = ""
+        self.vram_warning_logged = False  # Track if we've warned about VRAM not supported
         try:
             with open('/etc/dgx-release', 'r') as f:
                 for line in f:
@@ -214,11 +215,22 @@ class NVMLMonitor(GPUMonitor):
             utilization = pynvml.nvmlDeviceGetUtilizationRates(self.handle)
             gpu_percent = utilization.gpu
 
-            # Get memory info
-            memory_info = pynvml.nvmlDeviceGetMemoryInfo(self.handle)
-            vram_used_gb = memory_info.used / (1024**3)
-            vram_total_gb = memory_info.total / (1024**3)
-            vram_percent = (memory_info.used / memory_info.total) * 100
+            # Get memory info (may not be supported on newer GPUs like GB10/Blackwell)
+            try:
+                memory_info = pynvml.nvmlDeviceGetMemoryInfo(self.handle)
+                vram_used_gb = memory_info.used / (1024**3)
+                vram_total_gb = memory_info.total / (1024**3)
+                vram_percent = (memory_info.used / memory_info.total) * 100
+            except pynvml.NVMLError as e:
+                if 'Not Supported' in str(e):
+                    if not self.vram_warning_logged:
+                        logger.warning(f"VRAM monitoring not supported on {self.device_name} (GB10/Blackwell limitation)")
+                        self.vram_warning_logged = True
+                    vram_used_gb = None
+                    vram_total_gb = None
+                    vram_percent = None
+                else:
+                    raise
 
             # Get temperature
             try:
