@@ -587,6 +587,16 @@ async def create_app(test_mode=False):
     else:
         logger.warning(f"⚠️  Static images directory not found: {images_dir}")
 
+    # Serve favicon files
+    favicon_dir = os.path.join(os.path.dirname(__file__), "static", "favicon")
+    favicon_dir = os.path.abspath(favicon_dir)
+
+    if os.path.exists(favicon_dir):
+        app.router.add_static("/favicon", favicon_dir, name="favicon")
+        logger.info(f"Serving favicon files from: {favicon_dir}")
+    else:
+        logger.warning(f"⚠️  Favicon directory not found: {favicon_dir}")
+
     if not test_mode:
         app.on_startup.append(on_startup)
         app.on_shutdown.append(on_shutdown)
