@@ -915,14 +915,14 @@ def stop():
     found = False
     killed = []
 
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
-            cmdline = proc.info.get('cmdline')
+            cmdline = proc.info.get("cmdline")
             if cmdline:
-                cmdline_str = ' '.join(cmdline)
-                if 'live_vlm_webui.server' in cmdline_str or 'live-vlm-webui' in cmdline_str:
+                cmdline_str = " ".join(cmdline)
+                if "live_vlm_webui.server" in cmdline_str or "live-vlm-webui" in cmdline_str:
                     # Don't kill the stop command itself
-                    if 'stop' not in cmdline_str:
+                    if "stop" not in cmdline_str:
                         found = True
                         print(f"  Stopping process {proc.info['pid']}: {proc.info['name']}")
                         proc.terminate()
@@ -949,13 +949,13 @@ def stop():
     # Final verification
     time.sleep(1)
     still_running = False
-    for proc in psutil.process_iter(['cmdline']):
+    for proc in psutil.process_iter(["cmdline"]):
         try:
-            cmdline = proc.info.get('cmdline')
+            cmdline = proc.info.get("cmdline")
             if cmdline:
-                cmdline_str = ' '.join(cmdline)
-                if 'live_vlm_webui.server' in cmdline_str or 'live-vlm-webui' in cmdline_str:
-                    if 'stop' not in cmdline_str:
+                cmdline_str = " ".join(cmdline)
+                if "live_vlm_webui.server" in cmdline_str or "live-vlm-webui" in cmdline_str:
+                    if "stop" not in cmdline_str:
                         still_running = True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
