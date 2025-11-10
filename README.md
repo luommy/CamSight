@@ -142,6 +142,18 @@ sudo reboot
 live-vlm-webui
 ```
 
+> [!WARNING]
+> **Ollama 0.12.10 incompatible with Jetson Thor (JetPack 7.0)**
+>
+> Ollama version 0.12.10 does not work on Thor - GPU inference will fail.
+>
+> **Solution:** Use Ollama 0.12.9 or earlier:
+> ```bash
+> curl -fsSL https://ollama.com/install.sh | OLLAMA_VERSION=0.12.9 sh
+> ```
+>
+> See [troubleshooting guide](./docs/troubleshooting.md#ollama-gpu-error-on-jetson-thor-r382--jetpack-70) for details and alternatives.
+
 > [!NOTE]
 > **Jetson Thor GPU Monitoring:** Thor support is in the latest jetson-stats on GitHub but not yet released to PyPI.
 >

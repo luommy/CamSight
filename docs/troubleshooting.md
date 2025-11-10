@@ -397,6 +397,101 @@ For production use, get a proper SSL certificate from Let's Encrypt or a certifi
 
 ## VLM Backend Issues
 
+### Ollama GPU error on Jetson Thor (r38.2 / JetPack 7.0)
+
+**Issue:** On some Thor systems, Ollama fails to load models with:
+```
+Error: 500 Internal Server Error: do load request: Post "http://127.0.0.1:XXXXX/load": EOF
+```
+
+**Symptom during installation:** Ollama may show:
+```
+WARNING: Unsupported JetPack version detected. GPU may not be supported
+```
+
+**Root cause:** **Ollama 0.12.10 incompatibility with JetPack 7.0 (Thor only)**
+- ✅ **Ollama 0.12.9** on Thor (JetPack 7.0) - Works
+- ✅ **Ollama 0.12.10** on Orin (JetPack 6.x) - Works
+- ❌ **Ollama 0.12.10** on Thor (JetPack 7.0) - GPU inference fails
+- **Specific issue:** 0.12.10 introduced code incompatible with Thor's newer CUDA/GPU stack
+- Works fine on older JetPack versions (6.x)
+
+**Quick fix:** Downgrade to 0.12.9:
+```bash
+# Uninstall current version
+sudo systemctl stop ollama
+sudo systemctl disable ollama
+sudo rm -rf /usr/local/bin/ollama /etc/systemd/system/ollama.service
+
+# Install working version 0.12.9
+curl -fsSL https://ollama.com/install.sh | OLLAMA_VERSION=0.12.9 sh
+
+# Test it
+ollama run gemma3:4b "test"
+```
+
+**Workarounds:**
+
+1. **Use NVIDIA API Catalog (Recommended for testing):**
+   ```bash
+   # Get free API key from https://build.nvidia.com
+   live-vlm-webui --api-base https://integrate.api.nvidia.com/v1 \
+                  --model meta/llama-3.2-11b-vision-instruct \
+                  --api-key YOUR_NGC_API_KEY
+   ```
+
+2. **Try Ollama in Docker (might have better support):**
+   ```bash
+   docker run -d --gpus all --runtime nvidia \
+     -v ollama:/root/.ollama \
+     -p 11434:11434 \
+     --name ollama \
+     ollama/ollama
+
+   docker exec ollama ollama pull gemma3:4b
+   ```
+
+3. **Use alternative VLM backends:**
+   - vLLM (better support for new platforms)
+   - NVIDIA NIM (if available for Thor)
+   - SGLang
+
+4. **Wait for Ollama update:**
+   - Track: https://github.com/ollama/ollama/issues
+   - Thor support will likely be added in future releases
+
+**Diagnostic steps:**
+```bash
+# 1. Check Ollama version (most important!)
+ollama --version
+# If 0.12.10, downgrade to 0.12.9 (see Quick fix above)
+
+# 2. Check system versions
+cat /etc/nv_tegra_release
+nvidia-smi
+
+# 3. Check Ollama logs for errors
+sudo journalctl -u ollama -n 50 | grep -i error
+
+# 4. Test inference
+ollama run gemma3:4b "test"
+```
+
+**Status:** Confirmed Thor + JetPack 7.0 specific issue with Ollama 0.12.10.
+
+**Testing confirmation (extensive):**
+- Jetson Thor (JP 7.0) + 0.12.9 ✅
+- Jetson Thor (JP 7.0) + 0.12.10 ❌ **ONLY platform affected**
+- Jetson Orin (JP 6.2) + 0.12.10 ✅
+- DGX Spark (ARM64) + 0.12.10 ✅
+- Mac (x86_64/ARM64) + 0.12.5 ✅
+
+**Upstream tracking:**
+- GitHub Issue: https://github.com/ollama/ollama/issues/13027
+- Issue is specific to JetPack 7.0 (Thor), not general Ollama bug
+- Likely CUDA or GPU initialization incompatibility with Thor's newer stack
+- Consider adding your Thor details to the issue
+
 ### VLM connection errors
 
 **Issue:** Cannot connect to VLM API
