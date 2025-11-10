@@ -93,7 +93,7 @@ The script will:
 
 ### Option 2: pip install (Advanced)
 
-**For Jetson Orin (JetPack 6.x / r36.x):**
+**For Jetson AGX Orin and Jetson Orin Nano (JetPack 6.x / r36.x):**
 
 ```bash
 # Install dependencies
@@ -345,7 +345,7 @@ python -m vllm.entrypoints.openai.api_server \
 
 **Best for:** Cloud-based inference, instant access, free API trial usage
 
-**📗 Detailed Guide:** [VLM Backend Setup](./docs/setup/vlm-backends.md)
+**📘 Detailed Guide:** [VLM Backend Setup](./docs/setup/vlm-backends.md)
 
 ---
 
@@ -383,7 +383,7 @@ cd live-vlm-webui
 > - `linux/amd64` for x86_64 PC and DGX systems
 > - `linux/arm64` for DGX Spark (ARM64 SBSA server)
 
-**📗 Detailed Guide:** [Manual Docker Setup](./docs/setup/docker-manual.md)
+**📘 Detailed Guide:** [Manual Docker Setup](./docs/setup/docker-manual.md)
 
 ---
 
@@ -447,7 +447,7 @@ Includes:
 > [!IMPORTANT]
 > NIM requires NGC API Key and downloads ~10-15GB on first run. Requires NVIDIA driver 565+ (CUDA 12.9 support).
 
-**📗 Detailed Guide:** [Docker Compose Setup Details](./docs/setup/docker-compose-details.md)
+**📘 Detailed Guide:** [Docker Compose Setup Details](./docs/setup/docker-compose-details.md)
 
 ---
 

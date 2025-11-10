@@ -487,10 +487,11 @@ ollama run gemma3:4b "test"
 - Mac (x86_64/ARM64) + 0.12.5 ✅
 
 **Upstream tracking:**
-- GitHub Issue: https://github.com/ollama/ollama/issues/13027
+- GitHub Issue: https://github.com/ollama/ollama/issues/13033
+- Related issue: https://github.com/ollama/ollama/issues/13027
 - Issue is specific to JetPack 7.0 (Thor), not general Ollama bug
 - Likely CUDA or GPU initialization incompatibility with Thor's newer stack
-- Consider adding your Thor details to the issue
+- **Status:** Confirmed regression in 0.12.10 - use 0.12.9 until resolved
 
 ### VLM connection errors
 

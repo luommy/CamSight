@@ -897,5 +897,75 @@ def main():
         logger.error(f"Server error: {e}")
 
 
+def stop():
+    """Stop the running live-vlm-webui server"""
+    import sys
+    import time
+    
+    try:
+        import psutil
+    except ImportError:
+        logger.error("psutil is required for the stop command")
+        logger.error("Install it with: pip install live-vlm-webui[dev]")
+        sys.exit(1)
+    
+    print("Stopping Live VLM WebUI server...")
+    
+    # Find and kill processes running live_vlm_webui.server
+    found = False
+    killed = []
+    
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = proc.info.get('cmdline')
+            if cmdline:
+                cmdline_str = ' '.join(cmdline)
+                if 'live_vlm_webui.server' in cmdline_str or 'live-vlm-webui' in cmdline_str:
+                    # Don't kill the stop command itself
+                    if 'stop' not in cmdline_str:
+                        found = True
+                        print(f"  Stopping process {proc.info['pid']}: {proc.info['name']}")
+                        proc.terminate()
+                        killed.append(proc)
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    
+    if not found:
+        print("✓ No running server found")
+        return
+    
+    # Wait for graceful shutdown
+    time.sleep(2)
+    
+    # Force kill if still running
+    for proc in killed:
+        try:
+            if proc.is_running():
+                print(f"  Force killing process {proc.pid}")
+                proc.kill()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    
+    # Final verification
+    time.sleep(1)
+    still_running = False
+    for proc in psutil.process_iter(['cmdline']):
+        try:
+            cmdline = proc.info.get('cmdline')
+            if cmdline:
+                cmdline_str = ' '.join(cmdline)
+                if 'live_vlm_webui.server' in cmdline_str or 'live-vlm-webui' in cmdline_str:
+                    if 'stop' not in cmdline_str:
+                        still_running = True
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    
+    if still_running:
+        print("❌ Failed to stop server")
+        sys.exit(1)
+    else:
+        print("✓ Server stopped successfully")
+
+
 if __name__ == "__main__":
     main()

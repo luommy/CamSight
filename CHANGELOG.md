@@ -163,6 +163,9 @@ This is the initial public release of Live VLM WebUI - a real-time vision langua
   - Recommend pipx for live-vlm-webui
   - Document jetson-stats installation from GitHub
   - Provide complete jetson-stats setup (service + pipx inject)
+- **`live-vlm-webui-stop` command** now properly exposed as pip entry point
+  - Was documented but missing from pyproject.toml
+  - Now available after pip installation for graceful server shutdown
 
 ### Tested On
 - ✅ x86_64 PC (Linux Ubuntu 22.04)
