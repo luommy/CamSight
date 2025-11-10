@@ -38,12 +38,9 @@ live-vlm-webui
 
 **Access the WebUI:** Open **`https://localhost:8090`** in your browser
 
-> [!TIP]
-> **Now available on PyPI!** For platform-specific optimizations, see [Jetson Quick Start](#-jetson-quick-start) or [Docker Installation](#-docker-installation).
-
 > [!NOTE]
 > **Requirements:**
-> - **VLM Backend** - Ollama, vLLM, or cloud API. See [VLM Backend Setup]
+> - **VLM Backend** - Ollama, vLLM, or cloud API. See [VLM Backend Setup](#-setting-up-your-vlm-backend)
 
 **Platforms supported:**
 - ✅ Linux (x86_64, ARM64)
