@@ -46,7 +46,7 @@ live-vlm-webui
 - ✅ Linux PC (x86_64)
 - ✅ DGX Spark (ARM64)
 - ✅ macOS (Apple Silicon)
-- ✅ Windows (via WSL2)
+- ✅ Windows (via WSL2) - need to run Ollma on WSL. See [Windows WSL Setup Guide](./docs/usage/windows-wsl.md)
 - ⚠️ **Jetson (Orin, Thor)** - pip works but Docker is simpler. See [Jetson Quick Start](#-jetson-quick-start) below
 
 ---
@@ -81,7 +81,7 @@ The script auto-detects your platform and starts the appropriate Docker containe
 - ✅ Linux PC (x86_64)
 - ✅ DGX Spark (ARM64)
 - ⚠️ macOS (Docker can't access localhost - use pip install instead)
-- ❓ Windows WSL2 (not tested)
+- ❓ Windows WSL2 (Docker container not tested)
 - ✅ **Jetson (Orin, Thor)** - works great
 
 ---
