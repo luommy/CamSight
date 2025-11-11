@@ -43,8 +43,9 @@ live-vlm-webui
 > - **VLM Backend** - Ollama, vLLM, or cloud API. See [VLM Backend Setup](#-setting-up-your-vlm-backend)
 
 **Platforms supported:**
-- ✅ Linux (x86_64, ARM64)
-- ✅ macOS (Intel & Apple Silicon)
+- ✅ Linux PC (x86_64)
+- ✅ DGX Spark (ARM64)
+- ✅ macOS (Apple Silicon)
 - ✅ Windows (via WSL2)
 - ⚠️ **Jetson (Orin, Thor)** - pip works but Docker is simpler. See [Jetson Quick Start](#-jetson-quick-start) below
 
@@ -69,20 +70,19 @@ cd live-vlm-webui
 ./scripts/start_container.sh
 ```
 
-The script will:
-- ✅ Auto-detect your Jetson platform (Orin or Thor)
-- ✅ Pull the appropriate pre-built image from GitHub Container Registry
-- ✅ Configure GPU access automatically
-- ✅ Start the container with correct settings
-
-**Why Docker is recommended:**
-- ✅ Works immediately - no platform-specific setup
-- ✅ Isolated environment - no system package conflicts
-- ✅ Full GPU monitoring included
-- ✅ Production-ready
-- ✅ No Python version conflicts
+The script auto-detects your platform and starts the appropriate Docker container.
 
 **Access the WebUI:** Open **`https://localhost:8090`** in your browser
+
+> 📘 **Full Docker Guide:** [docs/setup/docker.md](docs/setup/docker.md)
+> Includes manual commands, troubleshooting, network modes, and more.
+
+**Platforms supported:**
+- ✅ Linux PC (x86_64)
+- ✅ DGX Spark (ARM64)
+- ⚠️ macOS (Docker can't access localhost - use pip install instead)
+- ❓ Windows WSL2 (not tested)
+- ✅ **Jetson (Orin, Thor)** - works great
 
 ---
 
@@ -377,7 +377,7 @@ cd live-vlm-webui
 > - `linux/amd64` for x86_64 PC and DGX systems
 > - `linux/arm64` for DGX Spark (ARM64 SBSA server)
 
-**📘 Detailed Guide:** [Manual Docker Setup](./docs/setup/docker-manual.md)
+**📘 Detailed Guide:** [Docker Deployment Guide](./docs/setup/docker.md)
 
 ---
 
@@ -450,7 +450,7 @@ Includes:
 ### For Users
 - 📖 [VLM Backend Setup](./docs/setup/vlm-backends.md) - Detailed guide for Ollama, vLLM, SGLang, NVIDIA API
 - 🐋 [Docker Compose Details](./docs/setup/docker-compose-details.md) - Complete stack setup with Ollama or NIM
-- 🛠️ [Manual Docker Deployment](./docs/setup/docker-manual.md) - Advanced Docker configurations
+- 🛠️ [Docker Deployment Guide](./docs/setup/docker.md) - Complete Docker setup and troubleshooting
 - ⚙️ [Advanced Configuration](./docs/usage/advanced-configuration.md) - Performance tuning, custom prompts, API compatibility
 
 ### For Developers

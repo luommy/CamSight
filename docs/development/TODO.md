@@ -23,27 +23,46 @@ This document consolidates all TODO items from across the codebase, categorized 
 - [x] Integration tests passing
 - [x] All linter/formatting checks passing
 
-### 🔴 BLOCKING (Must complete before v0.1.0)
+### ✅ COMPLETED - v0.1.0 Released! (2025-11-10)
 
-- [x] **Create CHANGELOG.md** - Required for release notes ✅
-  - Location: `/home/lekto/live-vlm-webui/CHANGELOG.md`
-  - Format: [Keep a Changelog](https://keepachangelog.com/)
-  - Content: Document all changes since project start → v0.1.0
+All blocking items for v0.1.0 have been completed:
 
-- [ ] **Update README.md "PyPI package coming soon!" warning**
-  - Remove or update: `> **PyPI package coming soon!** Works on all platforms including Jetson (requires openssl).`
-  - Replace with: Link to PyPI package page once published
+- [x] **Create CHANGELOG.md** - ✅ Completed
+- [x] **Update README.md** - ✅ PyPI installation documented
+- [x] **Final version verification** - ✅ Version 0.1.0 confirmed
+- [x] **Test wheel on platforms** - ✅ Tested during development
+- [x] **PyPI package published** - ✅ Available: `pip install live-vlm-webui`
+- [x] **GitHub release created** - ✅ v0.1.0 published
+- [x] **Docker images** - ✅ `latest` tags available
+- [x] **Apache 2.0 LICENSE** - ✅ Added (2025-11-10)
+- [x] **License headers** - ✅ All source files updated
+- [x] **OSRB approval** - ✅ VP: 11/05, Final: 11/06/2025
+- [x] **Troubleshooting doc** - ✅ Added section on text-only vs vision models (2025-11-10)
 
-- [ ] **Final version verification**
-  - Confirm `pyproject.toml` version is `0.1.0`
-  - All references to version numbers are consistent
+---
 
-- [ ] **Test wheel on all target platforms (final verification)**
-  - [ ] x86_64 PC (Linux Ubuntu)
-  - [ ] NVIDIA DGX Spark (ARM64 SBSA)
-  - [ ] macOS (Apple Silicon)
-  - [ ] Jetson Thor (ARM64 L4T R38+)
-  - [ ] Jetson Orin (ARM64 L4T R36)
+## 🔧 v0.1.1 Improvements (Future Release)
+
+### Release Process Improvements
+
+- [ ] **Add versioned Docker image tags via git tags**
+  - **Issue**: Currently only `latest` Docker tags exist for v0.1.0
+  - **Improvement**: Create git tags for releases to trigger versioned builds
+  - **Action** (for v0.1.1):
+    ```bash
+    git tag v0.1.1
+    git push origin v0.1.1
+    ```
+  - **Benefit**: Users can pin to specific Docker versions (e.g., `v0.1.1`)
+  - **Note**: Workflow already configured with `type=semver` patterns
+  - **Priority**: Medium - Good practice for production deployments
+  - **For v0.1.0**: Can retroactively tag if needed, but not critical
+
+- [ ] **Document release process for future releases**
+  - Create step-by-step guide in `docs/development/RELEASING.md`
+  - Include: version bump, changelog, git tag, GitHub release, PyPI upload, Docker verification
+  - Standard operating procedure for maintainers
+  - Priority: Medium
 
 ---
 
@@ -297,4 +316,3 @@ These are checklists in documentation files, not actual TODOs:
 ---
 
 **Document Status:** Active tracking document for v0.1.0 → v0.2.0 development cycle
-

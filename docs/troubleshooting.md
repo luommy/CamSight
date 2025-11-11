@@ -521,6 +521,66 @@ ollama run gemma3:4b "test"
 - For vLLM: Check startup logs for loaded model name
 - Click "🔄 Refresh" in the UI to re-detect models
 
+### VLM output is non-relevant or generic (hallucinating)
+
+**Issue:** The VLM generates plausible-sounding descriptions that don't match what's actually in the video/image.
+
+**Example:**
+- Camera shows a person at a desk
+- VLM says: "The image appears to be a serene landscape with rolling hills, a clear blue sky above and possibly wildflowers dotting the terrain at its base."
+
+**Root Cause:** ⚠️ **You selected a TEXT-ONLY model instead of a VISION model!**
+
+The text-only model doesn't actually see the image - it's just generating plausible text based on the prompt. This is called "hallucination."
+
+**Solution:** Use a **vision-capable** model:
+
+**✅ Correct Models (Vision):**
+- `llama3.2-vision:11b` (Ollama)
+- `llama3.2-vision:90b` (Ollama)
+- `llava:7b`, `llava:13b`, `llava:34b` (Ollama)
+- `moondream:latest` (Ollama)
+- `phi3.5-vision` (vLLM/HuggingFace)
+- `microsoft/phi-3-vision-128k-instruct` (NVIDIA API Catalog)
+- `meta/llama-3.2-90b-vision-instruct` (NVIDIA API Catalog)
+- `gpt-4o`, `gpt-4-vision-preview` (OpenAI)
+
+**❌ Incorrect Models (Text-Only - Will Hallucinate):**
+- `llama3.1:8b` ❌ (no vision)
+- `phi3.5:3.8b` ❌ (no vision - this is text-only!)
+- `phi3:14b` ❌ (no vision)
+- `gemma2:9b` ❌ (no vision)
+- `mistral:7b` ❌ (no vision)
+
+**How to verify your model supports vision:**
+```bash
+# For Ollama - check model details
+ollama show llama3.2-vision:11b
+
+# Look for "vision" in the model name or architecture
+# Vision models typically have "vision", "llava", or "multimodal" in the name
+```
+
+**Quick test:**
+1. Point camera at something distinctive (a colored object, text, etc.)
+2. Ask: "What color is the object in front of the camera?"
+3. If the response is generic or unrelated → you're using a text-only model
+
+**Why does this happen?**
+Text-only models can't process images, so they:
+1. Ignore the image data
+2. Generate text based solely on your prompt
+3. Create plausible-sounding but incorrect descriptions
+
+**Fix:**
+```bash
+# Pull a vision model
+ollama pull llama3.2-vision:11b
+
+# In Live VLM WebUI settings:
+# Model: llama3.2-vision:11b  (not llama3.1:8b or phi3.5:3.8b)
+```
+
 ### Slow VLM inference
 
 **Issue:** VLM takes >10 seconds per frame
@@ -801,4 +861,3 @@ This will show detailed information about:
 - Frame processing
 - GPU monitoring
 - WebSocket messages
-
