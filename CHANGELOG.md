@@ -12,6 +12,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2025-11-13
+
+**New Beta Feature: RTSP IP Camera Support**
+
+### Added (Beta Features)
+
+#### 🧪 RTSP IP Camera Support (Beta)
+- **Status**: Beta - Limited Hardware Testing
+- **Tested Hardware**: Reolink RLC-811A (1080p H.264)
+- **Features**:
+  - Stream video from RTSP IP cameras for continuous monitoring
+  - Switch between webcam and RTSP camera in UI
+  - Manual RTSP URL configuration with test connection
+  - Auto-reconnection on stream drops
+  - Support for H.264, H.265, and MJPEG codecs
+- **Use Cases**:
+  - Pool safety monitoring (child drowning detection)
+  - Home surveillance with VLM intelligence
+  - Elder care (fall detection)
+  - Pet monitoring
+  - Security camera analysis
+- **Documentation**: Complete setup guide at `docs/usage/rtsp-ip-cameras.md`
+- **Known Limitations**:
+  - Limited camera compatibility testing (only Reolink tested)
+  - Single stream per session
+  - No video preview in UI (backend processing only)
+  - CPU-based video decoding
+- **Community Help Needed**:
+  - Test with your IP camera brand/model and report results
+  - Help expand the tested hardware compatibility list
+  - Report issues on GitHub: https://github.com/NVIDIA-AI-IOT/live-vlm-webui/issues
+
+### Technical Details (RTSP)
+- **Backend**: Added `RTSPVideoTrack` class for RTSP stream handling (aiortc + FFmpeg)
+- **Frontend**: UI selector to switch between "Webcam" and "RTSP Stream" modes
+- **Configuration**: RTSP URL input with optional test connection
+- **Error Handling**: Connection failures, stream drops, auto-reconnection
+- **Security**: Credentials sanitized in server logs
+
+### Documentation
+- Added `docs/usage/rtsp-ip-cameras.md` - Comprehensive RTSP setup guide
+  - Quick start with example URLs (Reolink, Hikvision, Dahua, etc.)
+  - Use case examples with prompt templates
+  - Troubleshooting common issues
+  - Performance benchmarks
+  - Security and privacy considerations
+  - Testing without physical camera (FFmpeg, MediaMTX)
+- Updated README.md with Beta feature notice
+- Added tested hardware compatibility table
+
+### Future Enhancements (Post-Beta)
+- Multi-camera support (grid view)
+- Video preview in UI for RTSP streams
+- Hardware-accelerated video decoding (NVDEC on Jetson)
+- ONVIF camera auto-discovery
+- Camera preset management
+- Motion detection triggers
+- Recording/snapshot on AI-detected events
+
+---
+
 ## [0.1.1] - 2025-11-12
 
 **Bug Fixes and Documentation Improvements**

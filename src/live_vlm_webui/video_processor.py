@@ -69,7 +69,7 @@ class VideoProcessorTrack(VideoStreamTrack):
             frame = await self.track.recv()
 
             # Initialize timing on first frame
-            if self.first_frame_pts is None:
+            if self.first_frame_pts is None and frame.pts is not None:
                 self.first_frame_pts = frame.pts
                 self.first_frame_time = time.time()
                 # Store time_base for PTS conversion (e.g., 1/90000 for 90kHz clock)
@@ -79,15 +79,18 @@ class VideoProcessorTrack(VideoStreamTrack):
                 )
 
             # Calculate actual frame age (latency) using PTS and time_base
-            # PTS is in time_base units, convert to seconds: pts * time_base
-            frame_time_offset = (frame.pts - self.first_frame_pts) * self.frame_time_base
-            expected_wall_time = self.first_frame_time + frame_time_offset
-            current_time = time.time()
-            frame_latency = current_time - expected_wall_time
+            # Note: Some streams (like RTSP) may not have PTS set, so skip latency checks
+            frame_latency = 0.0
+            if frame.pts is not None and self.first_frame_pts is not None:
+                # PTS is in time_base units, convert to seconds: pts * time_base
+                frame_time_offset = (frame.pts - self.first_frame_pts) * self.frame_time_base
+                expected_wall_time = self.first_frame_time + frame_time_offset
+                current_time = time.time()
+                frame_latency = current_time - expected_wall_time
 
             # Check for accumulated latency and drop old frames if needed (only if max_latency > 0)
             max_latency = self.__class__.max_frame_latency
-            if max_latency > 0 and frame_latency > max_latency:
+            if max_latency > 0 and frame_latency > max_latency and frame.pts is not None:
                 logger.warning(
                     f"Frame is {frame_latency:.2f}s behind, dropping frames (threshold: {max_latency}s)"
                 )
@@ -102,18 +105,25 @@ class VideoProcessorTrack(VideoStreamTrack):
                     frame = await self.track.recv()
 
                     # Recalculate latency for new frame (using time_base for correct conversion)
-                    frame_time_offset = (frame.pts - self.first_frame_pts) * self.frame_time_base
-                    expected_wall_time = self.first_frame_time + frame_time_offset
-                    frame_latency = time.time() - expected_wall_time
+                    if frame.pts is not None and self.first_frame_pts is not None:
+                        frame_time_offset = (
+                            frame.pts - self.first_frame_pts
+                        ) * self.frame_time_base
+                        expected_wall_time = self.first_frame_time + frame_time_offset
+                        frame_latency = time.time() - expected_wall_time
+                    else:
+                        # If PTS becomes unavailable, stop dropping frames
+                        break
 
                     # Prevent infinite loop
                     if dropped_count > 100:
                         logger.error(
                             f"Dropped {dropped_count} frames, but still behind. Resetting timing."
                         )
-                        self.first_frame_pts = frame.pts
-                        self.first_frame_time = time.time()
-                        self.frame_time_base = float(frame.time_base)
+                        if frame.pts is not None:
+                            self.first_frame_pts = frame.pts
+                            self.first_frame_time = time.time()
+                            self.frame_time_base = float(frame.time_base)
                         break
 
                 if dropped_count > 0:

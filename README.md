@@ -452,6 +452,7 @@ Includes:
 ### For Users
 - 📖 [VLM Backend Setup](./docs/setup/vlm-backends.md) - Detailed guide for Ollama, vLLM, SGLang, NVIDIA API
 - 🤖 [List of Vision-Language Models](./docs/usage/list-of-vlms.md) - Comprehensive catalog of VLMs across Ollama, NVIDIA, OpenAI, Anthropic
+- 📹 [RTSP IP Camera Setup](./docs/usage/rtsp-ip-cameras.md) - 🧪 Beta feature for continuous monitoring (tested: Reolink RLC-811A)
 - 🐋 [Docker Compose Details](./docs/setup/docker-compose-details.md) - Complete stack setup with Ollama or NIM
 - 🛠️ [Docker Deployment Guide](./docs/setup/docker.md) - Complete Docker setup and troubleshooting
 - ⚙️ [Advanced Configuration](./docs/usage/advanced-configuration.md) - Performance tuning, custom prompts, API compatibility
@@ -470,7 +471,9 @@ Includes:
 ## ✨ Key Features
 
 ### Core Functionality
-- 🎥 **Real-time WebRTC streaming** - Low-latency bidirectional video
+- 🎥 **Multi-source video input**
+  - WebRTC webcam streaming (stable)
+  - 🧪 RTSP IP camera support (Beta - tested with Reolink RLC-811A)
 - 🔌 **OpenAI-compatible API** - Works with vLLM, SGLang, Ollama, TGI, or any vision API
 - 📝 **Interactive prompt editor** - 10+ preset prompts + custom prompts
 - ⚡ **Async processing** - Smooth video while VLM processes frames in background
