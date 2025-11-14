@@ -20,13 +20,9 @@ Stream your webcam to any VLM and get live AI-powered analysis - perfect for tes
 <details>
 <summary><b>🎥 Install + Demo Video</b> (Click to expand)</summary>
 
-> [!VIDEO]
-> **Watch the demo:** See Live VLM WebUI in action with webcam image with real-time AI analysis
+**Watch the demo:** See Live VLM WebUI in action with webcam image with real-time AI analysis
 
-<video width="100%" controls>
-  <source src="https://github.com/user-attachments/assets/47a920da-b943-4494-9b28-c4ea86e192e4" type="video/webm">
-  Your browser does not support the video tag. [Watch on GitHub](https://github.com/user-attachments/assets/47a920da-b943-4494-9b28-c4ea86e192e4)
-</video>
+[![Demo Video](docs/images/walkthrough_video_thumbnail.png)](https://github.com/user-attachments/assets/47a920da-b943-4494-9b28-c4ea86e192e4)
 
 </details>
 
