@@ -5,6 +5,9 @@ from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase
 
 
+# AioHTTPTestCase manages its own event loop via unittest's async support,
+# so it doesn't need pytest-asyncio. The asyncio_mode="auto" setting allows
+# AioHTTPTestCase to work without pytest-asyncio interference.
 class TestServerIntegration(AioHTTPTestCase):
     """Test server integration with all components."""
 

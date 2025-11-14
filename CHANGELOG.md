@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Version string fix**: Updated `__version__` in `__init__.py` to match package version
   - The `live-vlm-webui --version` command now correctly displays 0.2.1
   - This fixes an issue where v0.2.0 showed 0.1.1 in the version command
+- **Test infrastructure**: Fixed pytest-asyncio event loop conflicts with AioHTTPTestCase
+  - Changed `asyncio_mode` from `strict` to `auto` in `pyproject.toml`
+  - Removed conflicting `event_loop` fixture from `conftest.py`
+  - All integration/unit/performance tests now pass when run together
+  - Note: E2E tests should be run separately to avoid event loop conflicts
+
+### Changed
+- **Documentation**: Consolidated release documentation into single `releasing.md` file
+  - Merged `RELEASING.md` content into `releasing.md` and removed redundant file
+  - Added critical emphasis on updating `__init__.py` version throughout release process
+  - Added detailed test execution instructions to avoid event loop conflicts
+  - Updated release checklist with version verification steps
 
 ---
 

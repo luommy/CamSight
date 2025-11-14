@@ -31,8 +31,8 @@ tests/
 ### Quick Start
 
 ```bash
-# Run all tests
-pytest
+# Run all tests (excluding e2e - see Known Issues below)
+pytest tests/unit tests/integration tests/performance
 
 # Run unit tests only (fast)
 pytest tests/unit
@@ -42,7 +42,12 @@ pytest --cov=live_vlm_webui --cov-report=html
 
 # Run performance tests
 pytest -m performance
+
+# Run e2e tests separately (requires server running)
+pytest tests/e2e
 ```
+
+**Note:** Due to event loop conflicts between pytest-asyncio and AioHTTPTestCase, running `pytest tests/` (which includes e2e tests) may cause integration test failures. This is not a concern for CI/CD since e2e tests are skipped there. For local development, run tests excluding e2e, or run e2e tests separately.
 
 ### Using Test Scripts
 
@@ -347,4 +352,3 @@ When adding new features:
 - [pytest-asyncio](https://pytest-asyncio.readthedocs.io/)
 - [pytest-benchmark](https://pytest-benchmark.readthedocs.io/)
 - [Performance testing best practices](https://docs.python.org/3/library/profile.html)
-

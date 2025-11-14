@@ -212,7 +212,7 @@ This document tracks active TODO items for upcoming releases.
 - [ ] **Automated PyPI publishing on GitHub Release**
   - Update `.github/workflows/build-wheel.yml`
   - Configure PyPI Trusted Publishing
-  - Document in `docs/development/RELEASING.md`
+  - Document in `docs/development/releasing.md`
 
 - [ ] **Code coverage improvement**
   - Current: ~20%

@@ -1,6 +1,5 @@
 """Shared pytest fixtures and configuration for all tests."""
 
-import asyncio
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, AsyncMock
@@ -21,12 +20,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "e2e: mark test as end-to-end test")
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# Note: We don't define event_loop fixture here because:
+# 1. pytest-asyncio will create one automatically with asyncio_mode="strict"
+# 2. AioHTTPTestCase manages its own event loop and doesn't use pytest-asyncio
 
 
 @pytest.fixture
