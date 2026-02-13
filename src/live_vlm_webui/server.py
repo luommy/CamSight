@@ -588,6 +588,8 @@ async def rtsp_start(request):
         if session_id in rtsp_tracks:
             logger.warning(f"RTSP session {session_id} already exists, stopping it first")
             await _stop_rtsp_session(session_id)
+            # Wait for resources to fully release before restarting
+            await asyncio.sleep(0.3)
 
         logger.info(f"Starting RTSP stream for session {session_id}")
 
@@ -716,28 +718,50 @@ async def _stop_rtsp_session(session_id: str):
     if session_id in rtsp_tracks:
         rtsp_track, processor_track, frame_task = rtsp_tracks[session_id]
 
-        # Cancel frame consumption task
+        logger.info(f"Stopping RTSP session {session_id}...")
+
+        # Step 1: Stop RTSP track first (sets _stopped=True, breaks consume_frames loop)
+        try:
+            rtsp_track.stop()
+            logger.debug(f"RTSP track stopped for {session_id}")
+        except Exception as e:
+            logger.error(f"Error stopping RTSP track: {e}", exc_info=True)
+
+        # Step 2: Give the loop a moment to exit gracefully
+        await asyncio.sleep(0.1)
+
+        # Step 3: Cancel frame consumption task if still running
         if frame_task and not frame_task.done():
+            logger.debug(f"Cancelling frame task for {session_id}")
             frame_task.cancel()
             try:
-                await frame_task
+                await asyncio.wait_for(frame_task, timeout=2.0)
             except asyncio.CancelledError:
-                pass
+                logger.debug(f"Frame task cancelled for {session_id}")
+            except asyncio.TimeoutError:
+                logger.warning(f"Frame task cancellation timeout for {session_id}")
+            except Exception as e:
+                logger.warning(f"Error waiting for frame task: {e}")
 
-        # Stop tracks
+        # Step 4: Stop processor track
         try:
             processor_track.stop()
+            logger.debug(f"Processor track stopped for {session_id}")
         except Exception as e:
             logger.warning(f"Error stopping processor track: {e}")
 
+        # Step 5: Final cleanup - ensure container is closed
         try:
-            rtsp_track.stop()
+            if hasattr(rtsp_track, 'container') and rtsp_track.container:
+                rtsp_track.container.close()
+                rtsp_track.container = None
+                rtsp_track.stream = None
         except Exception as e:
-            logger.warning(f"Error stopping RTSP track: {e}")
+            logger.warning(f"Error in final container cleanup: {e}")
 
         # Remove from tracking
         del rtsp_tracks[session_id]
-        logger.info(f"RTSP stream stopped: {session_id}")
+        logger.info(f"RTSP stream stopped successfully: {session_id}")
     else:
         logger.warning(f"RTSP session {session_id} not found")
 

@@ -12,6 +12,7 @@ import av
 import asyncio
 import logging
 import re
+import threading
 from typing import Optional
 from aiortc import VideoStreamTrack
 from av import VideoFrame
@@ -59,6 +60,9 @@ class RTSPVideoTrack(VideoStreamTrack):
         self.stream: Optional[av.video.VideoStream] = None
         self._stopped = False
         self._frame_count = 0
+
+        # Thread lock to protect container access between executor thread and stop()
+        self._container_lock = threading.Lock()
 
         # Default options for RTSP
         self.options = options or {
@@ -169,31 +173,42 @@ class RTSPVideoTrack(VideoStreamTrack):
         Read and decode next frame from RTSP stream (blocking).
 
         This is a blocking operation and should be run in an executor.
+        Uses container_lock to prevent race conditions with stop().
 
         Returns:
-            VideoFrame or None if stream ended or error occurred
+            VideoFrame or None if stream ended, stopped, or error occurred
         """
-        if not self.container or not self.stream:
-            logger.error("Cannot read frame: container or stream not initialized")
+        # Fast path: check stopped before acquiring lock
+        if self._stopped:
             return None
 
-        try:
-            # Demux and decode packets until we get a video frame
-            for packet in self.container.demux(self.stream):
-                for frame in packet.decode():
-                    if isinstance(frame, VideoFrame):
-                        return frame
+        # Acquire lock to safely read from container
+        # This prevents stop() from closing the container while we're reading
+        with self._container_lock:
+            if self._stopped or not self.container or not self.stream:
+                return None
 
-            # No more frames available (stream ended)
-            logger.info("RTSP stream reached end of file")
-            return None
+            try:
+                # Demux and decode packets until we get a video frame
+                for packet in self.container.demux(self.stream):
+                    # Check stopped inside loop for fast exit
+                    if self._stopped:
+                        return None
+                    for frame in packet.decode():
+                        if isinstance(frame, VideoFrame):
+                            return frame
 
-        except av.error.EOFError:
-            logger.warning("RTSP stream EOF")
-            return None
-        except Exception as e:
-            logger.error(f"Error decoding RTSP frame: {e}")
-            return None
+                # No more frames available (stream ended)
+                logger.info("RTSP stream reached end of file")
+                return None
+
+            except av.error.EOFError:
+                logger.warning("RTSP stream EOF")
+                return None
+            except Exception as e:
+                if not self._stopped:  # Only log if not intentionally stopped
+                    logger.error(f"Error decoding RTSP frame: {e}")
+                return None
 
     async def _reconnect(self):
         """
@@ -243,19 +258,32 @@ class RTSPVideoTrack(VideoStreamTrack):
 
         Should be called when stream is no longer needed.
         """
+        logger.debug(f"Stopping RTSP track, _stopped={self._stopped}")
+
+        # Set stopped flag first to break recv() loop and _read_frame fast path
         self._stopped = True
 
-        if self.container:
-            try:
-                self.container.close()
-                logger.info(f"RTSP stream closed: {self._frame_count} frames received")
-            except Exception as e:
-                logger.warning(f"Error closing RTSP container: {e}")
-            finally:
-                self.container = None
-                self.stream = None
+        # Acquire lock to wait for any in-progress _read_frame to complete,
+        # then safely close the container
+        with self._container_lock:
+            if self.container:
+                try:
+                    logger.debug("Closing RTSP container...")
+                    self.container.close()
+                    logger.info(f"RTSP stream closed: {self._frame_count} frames received")
+                except Exception as e:
+                    logger.warning(f"Error closing RTSP container: {e}", exc_info=True)
+                finally:
+                    # Always clear references even if close() failed
+                    self.container = None
+                    self.stream = None
+                    logger.debug("RTSP container references cleared")
 
-        super().stop()
+        # Call parent stop
+        try:
+            super().stop()
+        except Exception as e:
+            logger.warning(f"Error in parent VideoStreamTrack.stop(): {e}")
 
     @property
     def is_connected(self) -> bool:
