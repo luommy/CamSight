@@ -41,6 +41,8 @@ class VLMService:
         api_key: str = "EMPTY",
         prompt: str = "Describe what you see in this image in one sentence.",
         max_tokens: int = 512,
+        enable_context: bool = True,
+        max_history: int = 4,
     ):
         """
         Initialize VLM service
@@ -51,6 +53,8 @@ class VLMService:
             api_key: API key (use "EMPTY" for local servers)
             prompt: Default prompt to use for image analysis
             max_tokens: Maximum tokens to generate
+            enable_context: Enable contextual analysis with frame history (default: True)
+            max_history: Maximum number of previous responses to keep (default: 4)
         """
         self.model = model
         self.api_base = api_base
@@ -62,10 +66,66 @@ class VLMService:
         self.is_processing = False
         self._processing_lock = asyncio.Lock()
 
+        # Context tracking for video understanding
+        self.enable_context = enable_context
+        self.max_history = max_history
+        self.response_history = []  # Store previous frame analyses
+        self._history_lock = asyncio.Lock()  # Protect history access
+
         # Metrics tracking
         self.last_inference_time = 0.0  # seconds
         self.total_inferences = 0
         self.total_inference_time = 0.0
+
+        if self.enable_context:
+            logger.info(
+                f"Context-aware mode enabled: keeping {self.max_history} frame history"
+            )
+
+    async def _build_contextual_prompt(self, base_prompt: str) -> str:
+        """
+        Build a context-aware prompt by including previous frame analyses.
+
+        This helps small VLMs understand temporal relationships in video streams.
+        Thread-safe with async lock protection.
+
+        Args:
+            base_prompt: The base prompt template
+
+        Returns:
+            Enhanced prompt with historical context if available
+        """
+        # If context is disabled or no history yet, return base prompt
+        if not self.enable_context or not self.response_history:
+            return base_prompt
+
+        # Build context section from history (thread-safe)
+        async with self._history_lock:
+            # Get recent history (reversed so most recent is first)
+            recent_history = list(reversed(self.response_history[-self.max_history:]))
+
+        if not recent_history:
+            return base_prompt
+
+        # Build context text
+        context_lines = []
+        for i, response in enumerate(recent_history, 1):
+            # Truncate long responses to keep prompt manageable
+            truncated = response[:150] + "..." if len(response) > 150 else response
+            context_lines.append(f"  {i} frame(s) ago: {truncated}")
+
+        context_text = "\n".join(context_lines)
+
+        # Construct enhanced prompt
+        contextual_prompt = f"""{base_prompt}
+
+[Previous Frame Context]
+{context_text}
+
+[Current Frame Analysis]
+Based on the above context, analyze the current frame and describe any changes or continuation of actions."""
+
+        return contextual_prompt
 
     async def analyze_image(self, image: Image.Image, prompt: Optional[str] = None) -> str:
         """
@@ -81,6 +141,9 @@ class VLMService:
         if prompt is None:
             prompt = self.prompt
 
+        # Build context-aware prompt if enabled
+        contextual_prompt = await self._build_contextual_prompt(prompt)
+
         try:
             start_time = time.perf_counter()
 
@@ -95,7 +158,7 @@ class VLMService:
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": prompt},
+                        {"type": "text", "text": contextual_prompt},
                         {
                             "type": "image_url",
                             "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
@@ -119,6 +182,15 @@ class VLMService:
             self.total_inference_time += inference_time
 
             result = response.choices[0].message.content.strip()
+
+            # Save to history if context is enabled (thread-safe)
+            if self.enable_context and result and not result.startswith("Error"):
+                async with self._history_lock:
+                    self.response_history.append(result)
+                    # Keep only the most recent N responses to avoid memory growth
+                    if len(self.response_history) > self.max_history * 2:
+                        self.response_history = self.response_history[-self.max_history:]
+
             logger.info(f"VLM response: {result} (latency: {inference_time*1000:.0f}ms)")
             return result
 
@@ -189,6 +261,47 @@ class VLMService:
             logger.info(f"Updated prompt to: {new_prompt}, max_tokens: {max_tokens}")
         else:
             logger.info(f"Updated prompt to: {new_prompt}")
+
+    async def clear_history(self) -> None:
+        """
+        Clear the response history (useful when switching scenes or restarting analysis).
+        Thread-safe operation.
+        """
+        async with self._history_lock:
+            count = len(self.response_history)
+            self.response_history.clear()
+            if count > 0:
+                logger.info(f"Cleared {count} frames from history")
+
+    async def get_history_summary(self) -> dict:
+        """
+        Get a summary of the current history state.
+        Thread-safe operation.
+
+        Returns:
+            Dictionary with history statistics
+        """
+        async with self._history_lock:
+            return {
+                "enabled": self.enable_context,
+                "max_history": self.max_history,
+                "current_count": len(self.response_history),
+                "history": list(self.response_history[-self.max_history:]) if self.response_history else []
+            }
+
+    def set_context_mode(self, enable: bool) -> None:
+        """
+        Enable or disable context-aware analysis.
+
+        Args:
+            enable: True to enable context tracking, False to disable
+        """
+        old_state = self.enable_context
+        self.enable_context = enable
+        logger.info(f"Context mode: {old_state} -> {enable}")
+
+        if not enable and self.response_history:
+            logger.info("Context disabled, but history is preserved (use clear_history() to remove)")
 
     def update_api_settings(
         self, api_base: Optional[str] = None, api_key: Optional[str] = None
